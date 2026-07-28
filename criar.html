@@ -1,0 +1,1370 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>O DATE — Crie seu convite</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  /* ============================================================
+     O DATE — CRIAR (página pública, qualquer amigo pode usar)
+     Preenche o formulário, clica em "Publicar e copiar link" e
+     ganha um link novo e permanente pra enviar. Não precisa de
+     token, conta no GitHub nem nada técnico — quem publica só
+     preenche e copia o link.
+  ============================================================ */
+  :root{
+    --bg-1:#1a0603; --bg-2:#2b0a03; --panel:#220803;
+    --rose:#ff4d1c; --rose-soft:#ff7a45; --blush:#ffc9a8;
+    --gold:#ffb648; --gold-soft:#ffd27a; --cream:#fff6ef; --ink:#2a0900;
+    --glass: rgba(255,255,255,.05); --glass-strong: rgba(255,255,255,.09);
+    --border: rgba(255,255,255,.14);
+    --font-display:'Fraunces', serif; --font-body:'Manrope', sans-serif;
+    --ease: cubic-bezier(.16,1,.3,1);
+  }
+  *{ box-sizing:border-box; }
+  html,body{ height:100%; margin:0; }
+  body{
+    font-family: var(--font-body); color: var(--cream);
+    background: linear-gradient(165deg, var(--bg-1), var(--bg-2));
+    min-height:100vh;
+  }
+  header{
+    display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+    padding: 22px 28px; border-bottom: 1px solid var(--border);
+    position: sticky; top:0; z-index: 5;
+    background: rgba(23,12,26,.9); backdrop-filter: blur(10px);
+  }
+  header h1{
+    font-family: var(--font-display); font-style:italic; font-weight:600;
+    font-size: 1.5rem; margin:0;
+    background: linear-gradient(100deg, var(--gold-soft), var(--rose-soft));
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  .badge{
+    font-size:.68rem; letter-spacing:.1em; text-transform:uppercase; font-weight:700;
+    color: var(--gold-soft); background: var(--glass); border:1px solid var(--border);
+    padding:6px 12px; border-radius:999px;
+  }
+
+  .layout{
+    display:grid; grid-template-columns: minmax(340px, 460px) 1fr;
+    gap: 0; align-items:start;
+  }
+  @media (max-width: 920px){ .layout{ grid-template-columns: 1fr; } }
+
+  .form-col{ padding: 28px; max-width: 620px; }
+  fieldset{
+    border:1px solid var(--border); border-radius:18px; padding: 18px 18px 6px;
+    margin: 0 0 18px; background: var(--glass);
+  }
+  legend{
+    font-family: var(--font-display); font-style: italic; font-weight:500;
+    font-size: 1.05rem; padding: 0 8px; color: var(--blush);
+  }
+  label{ display:block; font-size:.82rem; color: rgba(255,246,239,.75); margin-bottom: 14px; }
+  label span.req{ color: var(--rose-soft); }
+  input, textarea{
+    display:block; width:100%; margin-top:6px;
+    font-family: var(--font-body); font-size: .95rem;
+    padding: 11px 13px; border-radius: 10px;
+    border: 1px solid var(--border);
+    background: rgba(255,246,239,.96); color: var(--ink);
+  }
+  input:focus, textarea:focus{ outline:2px solid var(--gold-soft); outline-offset:1px; }
+  input.error, textarea.error{ outline:2px solid var(--rose); }
+  textarea{ resize: vertical; min-height: 90px; font-family: var(--font-body); }
+  .row2{ display:grid; grid-template-columns: 1fr 1fr; gap:12px; }
+
+  details{
+    border:1px solid var(--border); border-radius:18px; padding: 14px 18px; margin-bottom:18px;
+    background: var(--glass);
+  }
+  details summary{
+    cursor:pointer; font-weight:700; font-size:.85rem; color: var(--gold-soft);
+    letter-spacing:.02em;
+  }
+  details[open] summary{ margin-bottom: 10px; }
+
+  .actions{ margin-top: 6px; }
+  button{ font-family: var(--font-body); cursor:pointer; border:none; }
+  .btn{
+    font-weight:700; font-size: .96rem; padding: 14px 26px; border-radius: 999px;
+    transition: transform .2s var(--ease), box-shadow .2s var(--ease); width:100%;
+  }
+  .btn-primary{
+    color: var(--ink);
+    background: linear-gradient(100deg, var(--gold-soft), var(--rose-soft));
+    box-shadow: 0 12px 28px rgba(255,77,28,.38);
+  }
+  .btn-primary:hover{ transform: translateY(-2px); }
+  #form-msg{ margin-top:14px; font-size:.85rem; color: var(--gold-soft); min-height: 20px; }
+  #form-msg.error-text{ color: var(--rose-soft); }
+
+  .btn-secondary{
+    width:auto; padding: 10px 18px; font-size:.85rem;
+    color: var(--cream); background: var(--glass-strong);
+    border:1px solid var(--border) !important;
+  }
+  .btn-secondary:hover{ background: rgba(255,255,255,.16); }
+
+  .btn-link{
+    background:none; border:none; padding:0; margin: 0 0 12px;
+    color: var(--gold-soft); font-weight:700; font-size:.82rem;
+    text-decoration: underline dotted; text-underline-offset: 3px;
+  }
+  .btn-link:hover{ color: var(--rose-soft); }
+
+  .ai-box{
+    border:1px dashed var(--border); border-radius:14px; padding: 14px;
+    margin: 0 0 16px; background: rgba(255,255,255,.03);
+  }
+  .ai-note{ font-size:.78rem; line-height:1.5; color: rgba(255,246,239,.65); margin: 0 0 12px; }
+  .ai-actions{ display:flex; gap:10px; flex-wrap:wrap; margin: 4px 0 14px; }
+  .ai-actions .btn-secondary{ flex:1; min-width: 140px; }
+  #ai-msg{ font-size:.8rem; color: var(--gold-soft); min-height: 18px; }
+  #ai-msg.error-text{ color: var(--rose-soft); }
+
+  .preview-col{
+    position: sticky; top: 0; align-self:start;
+    padding: 28px; height: 100vh;
+    display:flex; flex-direction:column; gap:12px;
+  }
+  .preview-label{ font-size:.78rem; color: rgba(255,246,239,.55); text-align:center; }
+  #preview{
+    flex:1; width:100%; border-radius: 20px; border:1px solid var(--border);
+    box-shadow: 0 20px 60px rgba(0,0,0,.4);
+  }
+
+  code{ background: rgba(255,255,255,.08); padding:1px 5px; border-radius:4px; }
+
+  .clima-grid{ display:grid; grid-template-columns: repeat(2, 1fr); gap:10px; margin: 4px 0 6px; }
+  @media (max-width:480px){ .clima-grid{ grid-template-columns: 1fr; } }
+  .clima-card{
+    text-align:left; background: rgba(255,255,255,.04); border:1px solid var(--border);
+    border-radius:14px; padding: 12px 14px; cursor:pointer; color: var(--cream);
+    font-family: var(--font-body); transition: border-color .2s, background .2s;
+  }
+  .clima-card:hover{ border-color: var(--rose-soft); background: rgba(255,255,255,.07); }
+  .clima-card.selected{ border-color: var(--gold-soft); background: rgba(255,182,72,.1); }
+  .clima-card .clima-emoji{ font-size:1.2rem; margin-right:6px; }
+  .clima-card .clima-title{ font-weight:700; font-size:.88rem; }
+  .clima-card .clima-desc{ display:block; font-size:.74rem; color: rgba(255,246,239,.6); margin-top:2px; }
+
+  .emoji-chips{ display:flex; gap:8px; flex-wrap:wrap; margin: 8px 0 16px; }
+  .emoji-chip{
+    background: rgba(255,255,255,.05); border:1px solid var(--border); border-radius:10px;
+    font-size:1.15rem; padding:6px 10px; cursor:pointer; line-height:1;
+  }
+  .emoji-chip:hover, .emoji-chip.selected{ border-color: var(--gold-soft); background: rgba(255,182,72,.12); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>O DATE</h1>
+  <span class="badge">crie seu convite</span>
+</header>
+
+<main class="layout">
+
+  <section class="form-col">
+    <p style="font-size:.88rem; color:rgba(255,246,239,.7); margin-top:0;">
+      Preencha os campos abaixo. A pré-visualização ao lado mostra <strong>exatamente</strong> o que a pessoa vai ver.
+      Quando terminar, clique em <strong>"Publicar e copiar link"</strong> — na hora sai um link novo, prontinho pra mandar. Não precisa de token nem de conta em lugar nenhum.
+    </p>
+
+    <form id="invite-form" onsubmit="return false;">
+
+      <fieldset>
+        <legend>Escolha o clima (opcional)</legend>
+        <p class="ai-note" style="margin-top:0;">
+          Clique num clima pra já vir com sugestão de frase de abertura e mensagem prontas, no tom O DATE. Dá pra editar tudo depois, campo por campo.
+        </p>
+        <div class="clima-grid" id="clima-grid">
+          <button type="button" class="clima-card" data-clima="romance">
+            <span class="clima-emoji">🔥</span><span class="clima-title">Sem enrolação</span>
+            <span class="clima-desc">Direto ao ponto, confiante, sem joguinho</span>
+          </button>
+          <button type="button" class="clima-card" data-clima="ar-livre">
+            <span class="clima-emoji">🌅</span><span class="clima-title">Ao ar livre</span>
+            <span class="clima-desc">Passeio, pôr do sol, clima leve</span>
+          </button>
+          <button type="button" class="clima-card" data-clima="diversao">
+            <span class="clima-emoji">🎳</span><span class="clima-title">Só diversão</span>
+            <span class="clima-desc">Descontraído, brincalhão, sem pressão</span>
+          </button>
+          <button type="button" class="clima-card" data-clima="casa">
+            <span class="clima-emoji">🍷</span><span class="clima-title">Aconchego</span>
+            <span class="clima-desc">Clima intimista, calmo, gostoso</span>
+          </button>
+          <button type="button" class="clima-card" data-clima="misterio">
+            <span class="clima-emoji">🎁</span><span class="clima-title">Mistério total</span>
+            <span class="clima-desc">Não conta tudo, deixa curiosa(o)</span>
+          </button>
+          <button type="button" class="clima-card" data-clima="branco">
+            <span class="clima-emoji">✍️</span><span class="clima-title">Do meu jeito</span>
+            <span class="clima-desc">Começa em branco, escreve tudo você</span>
+          </button>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Quem vai receber</legend>
+        <label>Nome da pessoa convidada <span class="req">*</span>
+          <input id="f-guestName" placeholder="Ex: Ana">
+        </label>
+        <label>Emoji do convite <em>(opcional — aparece do lado do nome dela na primeira tela)</em>
+          <input id="f-emoji" placeholder="Ex: 🔥" maxlength="4">
+        </label>
+        <div class="emoji-chips" id="emoji-chips">
+          <button type="button" class="emoji-chip" data-emoji="🔥">🔥</button>
+          <button type="button" class="emoji-chip" data-emoji="💌">💌</button>
+          <button type="button" class="emoji-chip" data-emoji="🍷">🍷</button>
+          <button type="button" class="emoji-chip" data-emoji="🌅">🌅</button>
+          <button type="button" class="emoji-chip" data-emoji="😏">😏</button>
+          <button type="button" class="emoji-chip" data-emoji="🎉">🎉</button>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Quem está convidando</legend>
+        <label>Seu nome
+          <input id="f-hostName" value="Mauricio">
+        </label>
+        <label>Seu WhatsApp <em>(opcional — a resposta chega pronta pra enviar)</em>
+          <input id="f-whatsappNumber" placeholder="Ex: 5551999999999 (código do país + DDD + número)">
+        </label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Data, hora e local</legend>
+        <div class="row2">
+          <label>Data <span class="req">*</span>
+            <input type="date" id="f-date">
+          </label>
+          <label>Horário <span class="req">*</span>
+            <input type="time" id="f-time">
+          </label>
+        </div>
+        <label>Local <span class="req">*</span>
+          <input id="f-location" placeholder="Ex: Café Colombo, Porto Alegre">
+        </label>
+        <label>Link do mapa <em>(opcional — o local vira clicável)</em>
+          <input id="f-locationLink" placeholder="https://maps.google.com/...">
+        </label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Mensagem pessoal</legend>
+
+        <button type="button" id="btn-ai-toggle" class="btn-link">✨ Gerar mensagem com IA (skill copy-humana)</button>
+
+        <div id="ai-box" class="ai-box" hidden>
+          <p class="ai-note">
+            Este arquivo é só HTML local — ele não consegue chamar a IA sozinho sem expor uma chave secreta, o que não é seguro.
+            Então o fluxo é: eu monto um prompt pronto (já com a skill <code>copy-humana</code> embutida), você cola no Claude, cola a resposta ali embaixo, e eu jogo pro campo da mensagem.
+          </p>
+
+          <label>Contexto extra pra IA <em>(opcional — como vocês se conhecem, algo marcante, um apelido)</em>
+            <textarea id="f-ai-context" rows="2" placeholder="Ex: nos conhecemos numa festa em julho, ela ama café coado e chegou dez minutos atrasada..."></textarea>
+          </label>
+
+          <div class="ai-actions">
+            <button type="button" id="btn-ai-build" class="btn-secondary">Gerar prompt</button>
+          </div>
+
+          <label id="ai-prompt-wrap" hidden>Prompt pronto — copie e cole no Claude
+            <textarea id="ai-prompt-out" rows="7" readonly></textarea>
+          </label>
+          <div class="ai-actions" id="ai-prompt-actions" hidden>
+            <button type="button" id="btn-ai-copy" class="btn-secondary">Copiar prompt</button>
+            <button type="button" id="btn-ai-open" class="btn-secondary">Abrir Claude ↗</button>
+          </div>
+
+          <label id="ai-paste-wrap" hidden>Cole aqui a resposta do Claude
+            <textarea id="ai-paste-in" rows="5" placeholder="Cole a mensagem gerada..."></textarea>
+          </label>
+          <div class="ai-actions" id="ai-paste-actions" hidden>
+            <button type="button" id="btn-ai-use" class="btn-secondary">Usar esta mensagem ↓</button>
+          </div>
+
+          <p id="ai-msg"></p>
+        </div>
+
+        <label>O que vai aparecer no convite <span class="req">*</span>
+          <textarea id="f-message" placeholder="Escreva a mensagem que só essa pessoa vai ler..."></textarea>
+        </label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Resposta (RSVP)</legend>
+        <label>Texto do botão "sim"
+          <input id="f-btnYesLabel" placeholder="Bora, eu vou 🔥">
+        </label>
+        <label>Texto do botão "ainda não"
+          <input id="f-btnMaybeLabel" placeholder="Deixa eu pensar 😅">
+        </label>
+        <label>Mensagem depois do "sim"
+          <input id="f-rsvpYesMessage" placeholder="Boa! Já anota na agenda, vai ser bom 🔥">
+        </label>
+        <label>Mensagem depois do "ainda não"
+          <input id="f-rsvpMaybeMessage" placeholder="Combinado, pensa com calma, só não demora muito 😏">
+        </label>
+      </fieldset>
+
+      <details>
+        <summary>Opções avançadas (textos da primeira tela e do WhatsApp)</summary>
+        <label>Frase de abertura (primeira tela, antes de revelar o convite)
+          <input id="f-gateHeadline" placeholder="Não vim com joguinho. Vim com date marcado.">
+        </label>
+        <label>Subtítulo da primeira tela
+          <input id="f-gateSub" placeholder="Isso aqui não é bem um convite qualquer. É a sua próxima boa decisão.">
+        </label>
+        <label>Mensagem de WhatsApp se ela disser "sim" <em>(use <code>{host}</code> pro seu nome entrar sozinho)</em>
+          <input id="f-waMessageYes" placeholder="Oi {host}! Recebi o convite O DATE e a resposta é: SIM, bora! 🔥">
+        </label>
+        <label>Mensagem de WhatsApp se ela disser "ainda não"
+          <input id="f-waMessageMaybe" placeholder="Oi {host}! Vi o convite O DATE, ainda tô pensando, já te aviso 😏">
+        </label>
+      </details>
+
+      <div class="actions">
+        <button type="button" id="btn-publish" class="btn btn-primary">🔗 Publicar e copiar link</button>
+      </div>
+      <p id="form-msg"></p>
+
+      <label id="publish-link-wrap" hidden style="margin-top:10px;">Link fixo deste convite — envie este link pra pessoa
+        <input id="publish-link-out" readonly>
+      </label>
+      <div class="ai-actions" id="publish-link-actions" hidden>
+        <button type="button" id="btn-publish-copy" class="btn-secondary">Copiar link</button>
+      </div>
+
+      <div class="actions" style="margin-top:18px;">
+        <button type="button" id="btn-generate" class="btn-secondary" style="width:100%;">Ou baixar uma cópia offline (sem link, sem hospedagem) ⬇</button>
+      </div>
+    </form>
+  </section>
+
+  <section class="preview-col">
+    <div class="preview-label">pré-visualização ao vivo — é isso que a pessoa vai ver, nada além disso</div>
+    <iframe id="preview" title="Pré-visualização do convite"></iframe>
+  </section>
+
+</main>
+
+<script>
+/* ============================================================
+   TEMPLATE — o site inteiro (o-date.html) com os campos do
+   CONFIG trocados por marcadores %%TOKEN%%. É montado aqui uma
+   vez só; o formulário acima só troca os marcadores por texto.
+   O arquivo baixado NÃO contém nada deste painel — só o site.
+============================================================ */
+const TEMPLATE = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>O DATE — Convite</title>
+<meta name="theme-color" content="#1a0603">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500;1,9..144,600&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  /* ============================================================
+     O DATE — template de convite (single file, reutilizável)
+     Edite o objeto CONFIG lá no bloco de script, no fim do arquivo,
+     para transformar isto num convite novo. O design não precisa
+     ser tocado.
+  ============================================================ */
+
+  :root{
+    --bg-1:#1a0603;
+    --bg-2:#3a0d02;
+    --bg-3:#7a1d02;
+    --bg-4:#c93b12;
+    --rose:#ff4d1c;
+    --rose-soft:#ff7a45;
+    --blush:#ffc9a8;
+    --gold:#ffb648;
+    --gold-soft:#ffd27a;
+    --cream:#fff6ef;
+    --ink:#2a0900;
+    --glass: rgba(255,255,255,.06);
+    --glass-strong: rgba(255,255,255,.11);
+    --border: rgba(255,255,255,.16);
+    --shadow: 0 20px 60px rgba(20,4,16,.45);
+    --font-display: 'Fraunces', serif;
+    --font-body: 'Manrope', sans-serif;
+    --ease: cubic-bezier(.16,1,.3,1);
+  }
+
+  *{ box-sizing:border-box; }
+  html,body{ height:100%; }
+  body{
+    margin:0;
+    min-height:100vh;
+    font-family: var(--font-body);
+    color: var(--cream);
+    background:
+      radial-gradient(60% 50% at 15% 10%, rgba(255,77,28,.28), transparent 60%),
+      radial-gradient(55% 45% at 85% 15%, rgba(255,182,72,.18), transparent 60%),
+      radial-gradient(70% 60% at 50% 100%, rgba(201,59,18,.4), transparent 60%),
+      linear-gradient(160deg, var(--bg-1), var(--bg-2) 45%, var(--bg-3) 85%);
+    background-attachment: fixed;
+    overflow-x: hidden;
+    position: relative;
+  }
+
+  /* textura sutil de grão, pra não ficar "chapado" */
+  body::after{
+    content:"";
+    position: fixed; inset:0;
+    pointer-events:none;
+    opacity:.05;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  /* partículas flutuantes */
+  #particles{ position: fixed; inset:0; overflow:hidden; pointer-events:none; z-index:0; }
+  .particle{
+    position:absolute; bottom:-10vh; font-size: 20px; opacity:0;
+    animation-name: floatUp; animation-timing-function: linear; animation-iteration-count: infinite;
+    filter: drop-shadow(0 0 6px rgba(255,201,168,.4));
+  }
+  @keyframes floatUp{
+    0%{ transform: translateY(0) translateX(0) rotate(0deg); opacity:0; }
+    8%{ opacity:.85; }
+    92%{ opacity:.7; }
+    100%{ transform: translateY(-115vh) translateX(var(--drift,40px)) rotate(300deg); opacity:0; }
+  }
+
+  main{ position:relative; z-index:1; }
+
+  .screen{
+    min-height:100vh;
+    width:100%;
+    display:none;
+    align-items:center;
+    justify-content:center;
+    padding: 8vh 6vw;
+  }
+  .screen.active{ display:flex; }
+  .screen-inner{
+    width:100%; max-width: 620px;
+    text-align:center;
+    animation: riseIn .9s var(--ease) both;
+  }
+  @keyframes riseIn{
+    from{ opacity:0; transform: translateY(26px) scale(.98); }
+    to{ opacity:1; transform: translateY(0) scale(1); }
+  }
+
+  .eyebrow{
+    display:inline-flex; align-items:center; gap:8px;
+    font-family: var(--font-body); font-weight:700; letter-spacing:.22em;
+    font-size:.72rem; text-transform:uppercase; color: var(--gold-soft);
+    background: var(--glass); border:1px solid var(--border);
+    padding: 8px 16px; border-radius: 999px; margin-bottom: 22px;
+  }
+  .eyebrow .dot{ width:6px; height:6px; border-radius:50%; background: var(--rose); box-shadow:0 0 10px var(--rose); }
+
+  h1.display{
+    font-family: var(--font-display); font-weight:500; font-style: italic;
+    line-height: 1.08; margin: 0 0 18px;
+    font-size: clamp(2.2rem, 6vw, 3.6rem);
+    background: linear-gradient(100deg, var(--cream) 30%, var(--blush) 55%, var(--gold-soft) 80%);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  p.lede{
+    font-size: clamp(1rem, 2vw, 1.15rem); line-height:1.6; color: rgba(255,246,239,.82);
+    max-width: 46ch; margin: 0 auto 34px;
+  }
+
+  .btn-row{ display:flex; gap:14px; justify-content:center; flex-wrap:wrap; margin-top: 8px; }
+  button{ font-family: var(--font-body); cursor:pointer; border:none; }
+
+  .btn{
+    font-weight:700; font-size: .98rem; padding: 15px 30px; border-radius: 999px;
+    transition: transform .25s var(--ease), box-shadow .25s var(--ease), background .25s;
+    position: relative;
+  }
+  .btn-primary{
+    color: var(--ink);
+    background: linear-gradient(100deg, var(--gold-soft), var(--rose-soft));
+    box-shadow: 0 12px 30px rgba(255,77,28,.4);
+  }
+  .btn-primary:hover{ transform: translateY(-3px); box-shadow: 0 16px 40px rgba(255,77,28,.55); }
+  .btn-ghost{
+    color: var(--cream);
+    background: var(--glass);
+    border:1px solid var(--border) !important;
+    position:relative;
+  }
+  .btn-ghost:hover{ background: var(--glass-strong); }
+
+  #dodge-wrap{ display:inline-block; transition: transform .35s cubic-bezier(.34,1.56,.64,1); }
+
+  .hint{ margin-top:16px; font-size:.8rem; color: rgba(255,246,239,.5); }
+
+  /* --- stage 2 : reveal / landing do "app" --- */
+  .wordmark{
+    font-family: var(--font-display); font-style: italic; font-weight:600;
+    font-size: clamp(2.6rem, 9vw, 5rem); letter-spacing:.01em; margin:0 0 8px;
+    background: linear-gradient(100deg, var(--gold-soft), var(--cream) 45%, var(--rose-soft));
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  .wordmark-spark{ display:block; font-size: 1.4rem; margin-bottom: 10px; }
+  .tagline{ font-size: 1rem; letter-spacing:.04em; color: var(--blush); margin-bottom: 40px; }
+
+  .scroll-cue{ margin-top: 46px; display:flex; flex-direction:column; align-items:center; gap:6px; opacity:.75; }
+  .scroll-cue .arrow{ width:10px; height:10px; border-right:2px solid var(--gold-soft); border-bottom:2px solid var(--gold-soft); transform: rotate(45deg); animation: bob 1.6s ease-in-out infinite; }
+  @keyframes bob{ 0%,100%{ transform: translateY(0) rotate(45deg);} 50%{ transform: translateY(6px) rotate(45deg);} }
+
+  /* --- stage 3 : convite real --- */
+  .card{
+    background: var(--glass);
+    border:1px solid var(--border);
+    border-radius: 26px;
+    padding: 34px 30px;
+    -webkit-backdrop-filter: blur(18px);
+    backdrop-filter: blur(18px);
+    box-shadow: var(--shadow);
+    margin-bottom: 22px;
+    text-align:left;
+  }
+  .card h2{
+    font-family: var(--font-display); font-style:italic; font-weight:500;
+    font-size: 1.5rem; margin: 0 0 10px; color: var(--cream);
+  }
+  .card p{ margin:0; line-height:1.7; color: rgba(255,246,239,.85); font-size:.98rem; }
+
+  .countdown{ display:flex; gap:10px; justify-content:center; margin: 6px 0 4px; flex-wrap: wrap; }
+  .cd-box{
+    background: var(--glass-strong); border:1px solid var(--border); border-radius:16px;
+    padding: 14px 10px; min-width: 68px; text-align:center;
+  }
+  .cd-num{ font-family: var(--font-display); font-size: 1.7rem; font-weight:600; display:block; color: var(--gold-soft); }
+  .cd-label{ font-size:.62rem; letter-spacing:.14em; text-transform:uppercase; color: rgba(255,246,239,.6); }
+  .cd-today{ font-family: var(--font-display); font-style:italic; font-size:1.4rem; color: var(--rose-soft); text-align:center; padding: 10px 0; }
+
+  .details-grid{ display:grid; grid-template-columns: repeat(auto-fit, minmax(150px,1fr)); gap:12px; margin-top:6px; }
+  .detail{
+    background: var(--glass); border:1px solid var(--border); border-radius:16px; padding:16px;
+    text-align:left;
+  }
+  .detail .icon{ font-size:1.3rem; margin-bottom:6px; display:block; }
+  .detail .label{ font-size:.68rem; text-transform:uppercase; letter-spacing:.1em; color: var(--blush); margin-bottom:3px; }
+  .detail .value{ font-size:.95rem; font-weight:600; color: var(--cream); }
+  .detail a.value{ color: var(--gold-soft); text-decoration:none; border-bottom:1px dashed var(--gold-soft); }
+
+  .rsvp{ text-align:center; }
+  .rsvp .btn-row{ margin-bottom: 6px; }
+  #rsvp-response{
+    min-height: 26px; font-size:.95rem; color: var(--gold-soft); margin-top: 14px;
+    opacity:0; transform: translateY(6px); transition: all .4s var(--ease);
+  }
+  #rsvp-response.show{ opacity:1; transform: translateY(0); }
+
+  .btn[disabled]{ opacity:.55; cursor:default; transform:none !important; }
+  .chosen{ outline: 2px solid var(--gold-soft); outline-offset:2px; }
+
+  footer.sig{
+    text-align:center; padding: 40px 6vw 60px; font-size:.85rem; color: rgba(255,246,239,.55);
+    position:relative; z-index:1;
+  }
+  footer.sig b{ color: var(--blush); font-weight:700; }
+
+  @media (max-width:480px){
+    .card{ padding: 26px 20px; }
+    .cd-box{ min-width: 58px; padding: 12px 6px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="particles"></div>
+
+<main>
+
+  <\!-- ===================== STAGE 1 — Portal / gate ===================== -->
+  <section class="screen active" data-screen="1">
+    <div class="screen-inner">
+      <span class="eyebrow"><span class="dot"></span> <span id="eyebrow-name">Para você</span></span>
+      <h1 class="display" id="gate-headline">Não vim com joguinho. Vim com date marcado.</h1>
+      <p class="lede" id="gate-sub">Isso aqui não é bem um convite qualquer. É a sua próxima boa decisão.</p>
+      <div class="btn-row">
+        <button class="btn btn-primary" id="btn-open">Bora ✦</button>
+        <span id="dodge-wrap">
+          <button class="btn btn-ghost" id="btn-decline">Depois eu vejo</button>
+        </span>
+      </div>
+      <p class="hint">(esse botão aí foge um pouco, já aviso 😏)</p>
+      <p id="decline-msg" class="hint" style="opacity:0; transition:opacity .4s;">foge não, quando quiser é só voltar aqui 😏</p>
+    </div>
+  </section>
+
+  <\!-- ===================== STAGE 2 — Reveal / "landing do app" ===================== -->
+  <section class="screen" data-screen="2">
+    <div class="screen-inner">
+      <span class="wordmark-spark">✦ ✧ ✦</span>
+      <h1 class="wordmark">O DATE</h1>
+      <p class="tagline">só precisa de uma noite pra mudar tudo.</p>
+      <p class="lede">Isso não é apenas um convite. É um DATE de verdade, direto ao ponto e sem frescura.</p>
+      <button class="btn btn-primary" id="btn-continue">Bora ver →</button>
+      <div class="scroll-cue"><span class="arrow"></span></div>
+    </div>
+  </section>
+
+  <\!-- ===================== STAGE 3 — Convite real ===================== -->
+  <section class="screen" data-screen="3">
+    <div class="screen-inner" style="max-width:560px;">
+
+      <span class="eyebrow"><span class="dot"></span> Convite</span>
+      <h1 class="display" style="font-size:clamp(1.9rem,5vw,2.6rem);" id="invite-headline">Ei, <span id="guest-name-inline">você</span> 😏</h1>
+
+      <div class="card">
+        <p id="invite-message">Mensagem pessoal aqui — edite o campo <code>message</code> no CONFIG.</p>
+      </div>
+
+      <div class="card" id="countdown-card">
+        <h2>Faltam</h2>
+        <div class="countdown" id="countdown"></div>
+      </div>
+
+      <div class="card">
+        <h2>Detalhes</h2>
+        <div class="details-grid">
+          <div class="detail">
+            <span class="icon">📅</span>
+            <span class="label">Data</span>
+            <span class="value" id="detail-date">—</span>
+          </div>
+          <div class="detail">
+            <span class="icon">🕗</span>
+            <span class="label">Horário</span>
+            <span class="value" id="detail-time">—</span>
+          </div>
+          <div class="detail" id="detail-location-wrap">
+            <span class="icon">📍</span>
+            <span class="label">Local</span>
+            <span class="value" id="detail-location">—</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card rsvp">
+        <h2 style="text-align:center;">Vai ter lugar guardado com seu nome</h2>
+        <div class="btn-row">
+          <button class="btn btn-primary" id="btn-yes">Sim, eu vou</button>
+          <button class="btn btn-ghost" id="btn-maybe">Ainda não sei</button>
+        </div>
+        <p id="rsvp-response"></p>
+      </div>
+
+    </div>
+  </section>
+
+</main>
+
+<footer class="sig">
+  feito com 🔥 por <b id="host-name-footer">alguém especial</b> · O DATE
+</footer>
+
+<script>
+/* ============================================================
+   CONFIG — o ÚNICO bloco que você precisa editar para reaproveitar
+   este template num convite novo. Nada mais no arquivo precisa mudar.
+============================================================ */
+const CONFIG = {
+  // pessoa convidada
+  guestName: "%%GUEST_NAME%%",
+
+  // quem está convidando
+  hostName: "%%HOST_NAME%%",
+
+  // emoji opcional que aparece do lado do nome na primeira tela
+  inviteEmoji: "%%INVITE_EMOJI%%",
+
+  // textos da primeira tela (o "portão" antes do convite aparecer)
+  gateHeadline: "%%GATE_HEADLINE%%",
+  gateSub: "%%GATE_SUB%%",
+
+  // mensagem pessoal que aparece dentro do convite
+  message: "%%MESSAGE%%",
+
+  // data e hora do encontro (formato ISO — usado na contagem regressiva)
+  eventDateISO: "%%EVENT_DATE_ISO%%",
+  eventDateLabel: "%%EVENT_DATE_LABEL%%",
+  eventTime: "%%EVENT_TIME%%",
+
+  // local — se tiver um link de mapa, o texto vira clicável
+  eventLocation: "%%EVENT_LOCATION%%",
+  eventLocationLink: "%%EVENT_LOCATION_LINK%%",
+
+  // opcional: se preencher, o RSVP abre o WhatsApp com a resposta pronta
+  // formato: código do país + DDD + número, só números. Ex: "5551999999999"
+  whatsappNumber: "%%WHATSAPP_NUMBER%%",
+
+  // textos dos botões de resposta (RSVP)
+  btnYesLabel: "%%BTN_YES_LABEL%%",
+  btnMaybeLabel: "%%BTN_MAYBE_LABEL%%",
+
+  // mensagens mostradas na tela depois da resposta
+  rsvpYesMessage: "%%RSVP_YES_MESSAGE%%",
+  rsvpMaybeMessage: "%%RSVP_MAYBE_MESSAGE%%",
+
+  // mensagens enviadas pelo WhatsApp (só valem se whatsappNumber estiver preenchido)
+  // "{host}" é trocado automaticamente pelo valor de hostName
+  waMessageYes: "%%WA_MESSAGE_YES%%",
+  waMessageMaybe: "%%WA_MESSAGE_MAYBE%%",
+};
+
+/* ============================================================
+   A partir daqui é só o motor do template — não precisa editar.
+   Tudo é montado via DOM (createElement/textContent), sem innerHTML,
+   pra não ter risco nenhum mesmo que algum texto do CONFIG mude.
+============================================================ */
+
+function setText(id, text){
+  const el = document.getElementById(id);
+  if (el) el.textContent = text;
+}
+
+setText('eyebrow-name', (CONFIG.inviteEmoji ? CONFIG.inviteEmoji + " " : "") + "Para " + CONFIG.guestName);
+setText('gate-headline', CONFIG.gateHeadline);
+setText('gate-sub', CONFIG.gateSub);
+setText('guest-name-inline', CONFIG.guestName);
+setText('invite-message', CONFIG.message);
+setText('detail-date', CONFIG.eventDateLabel);
+setText('detail-time', CONFIG.eventTime);
+setText('host-name-footer', CONFIG.hostName);
+setText('btn-yes', CONFIG.btnYesLabel);
+setText('btn-maybe', CONFIG.btnMaybeLabel);
+
+// local: texto simples, ou link clicável se houver eventLocationLink
+(function renderLocation(){
+  const old = document.getElementById('detail-location');
+  if (!old) return;
+  if (CONFIG.eventLocationLink) {
+    const a = document.createElement('a');
+    a.id = 'detail-location';
+    a.className = 'value';
+    a.href = CONFIG.eventLocationLink;
+    a.target = '_blank';
+    a.rel = 'noopener';
+    a.textContent = CONFIG.eventLocation + ' ↗';
+    old.replaceWith(a);
+  } else {
+    old.textContent = CONFIG.eventLocation;
+  }
+})();
+
+// --- partículas flutuantes de fundo ---
+(function particles(){
+  const wrap = document.getElementById('particles');
+  const glyphs = ['🔥','✨','♡','✦','🧡'];
+  const N = 16;
+  for (let i=0;i<N;i++){
+    const s = document.createElement('span');
+    s.className = 'particle';
+    s.textContent = glyphs[Math.floor(Math.random()*glyphs.length)];
+    const left = Math.random()*100;
+    const duration = 14 + Math.random()*14;
+    const delay = -Math.random()*duration;
+    const size = 14 + Math.random()*14;
+    const drift = (Math.random()*120 - 60) + 'px';
+    s.style.left = left + 'vw';
+    s.style.fontSize = size + 'px';
+    s.style.setProperty('--drift', drift);
+    s.style.animationDuration = duration + 's';
+    s.style.animationDelay = delay + 's';
+    wrap.appendChild(s);
+  }
+})();
+
+// --- navegação entre telas ---
+function goTo(stage){
+  document.querySelectorAll('.screen').forEach(function(sec){
+    sec.classList.toggle('active', sec.dataset.screen === String(stage));
+  });
+  window.scrollTo(0, 0);
+}
+
+document.getElementById('btn-open').addEventListener('click', function(){ goTo(2); });
+document.getElementById('btn-continue').addEventListener('click', function(){ goTo(3); });
+
+// botão "agora não" foge do cursor algumas vezes antes de aceitar o clique
+(function dodgeButton(){
+  const wrap = document.getElementById('dodge-wrap');
+  const btn = document.getElementById('btn-decline');
+  const msg = document.getElementById('decline-msg');
+  let dodges = 0;
+  const MAX_DODGES = 4;
+
+  btn.addEventListener('mouseenter', function(){
+    if (dodges >= MAX_DODGES) return;
+    dodges++;
+    const x = (Math.random()*160 - 80).toFixed(0);
+    const y = (Math.random()*40 - 20).toFixed(0);
+    wrap.style.transform = 'translate(' + x + 'px,' + y + 'px)';
+  });
+
+  btn.addEventListener('click', function(){
+    msg.style.opacity = 1;
+  });
+})();
+
+// --- contagem regressiva (construída via DOM, sem innerHTML) ---
+(function countdown(){
+  const el = document.getElementById('countdown');
+  const target = new Date(CONFIG.eventDateISO).getTime();
+
+  function clear(el){ while (el.firstChild) el.removeChild(el.firstChild); }
+
+  function box(num, label){
+    const d = document.createElement('div');
+    d.className = 'cd-box';
+    const n = document.createElement('span');
+    n.className = 'cd-num';
+    n.textContent = num;
+    const l = document.createElement('span');
+    l.className = 'cd-label';
+    l.textContent = label;
+    d.appendChild(n);
+    d.appendChild(l);
+    return d;
+  }
+
+  function render(){
+    const now = Date.now();
+    const diff = target - now;
+    clear(el);
+
+    if (diff <= 0){
+      const today = document.createElement('div');
+      today.className = 'cd-today';
+      today.textContent = 'é hoje ✨🎉';
+      el.appendChild(today);
+      return;
+    }
+
+    const d = Math.floor(diff / 86400000);
+    const h = Math.floor((diff % 86400000) / 3600000);
+    const m = Math.floor((diff % 3600000) / 60000);
+    const s = Math.floor((diff % 60000) / 1000);
+    const pad = function(n){ return String(n).padStart(2,'0'); };
+
+    el.appendChild(box(d, 'dias'));
+    el.appendChild(box(pad(h), 'horas'));
+    el.appendChild(box(pad(m), 'min'));
+    el.appendChild(box(pad(s), 'seg'));
+  }
+
+  render();
+  setInterval(render, 1000);
+})();
+
+// --- RSVP ---
+(function rsvp(){
+  const yes = document.getElementById('btn-yes');
+  const maybe = document.getElementById('btn-maybe');
+  const response = document.getElementById('rsvp-response');
+
+  function waLink(text){
+    return 'https://wa.me/' + CONFIG.whatsappNumber + '?text=' + encodeURIComponent(text.replace('{host}', CONFIG.hostName));
+  }
+
+  yes.addEventListener('click', function(){
+    yes.classList.add('chosen');
+    maybe.disabled = true;
+    response.textContent = CONFIG.rsvpYesMessage;
+    response.classList.add('show');
+    if (CONFIG.whatsappNumber){
+      window.open(waLink(CONFIG.waMessageYes), '_blank', 'noopener');
+    }
+  });
+
+  maybe.addEventListener('click', function(){
+    maybe.classList.add('chosen');
+    yes.disabled = true;
+    response.textContent = CONFIG.rsvpMaybeMessage;
+    response.classList.add('show');
+    if (CONFIG.whatsappNumber){
+      window.open(waLink(CONFIG.waMessageMaybe), '_blank', 'noopener');
+    }
+  });
+})();
+<\/script>
+</body>
+</html>
+`;
+
+const DEFAULTS = {
+  guestName: "Você",
+  hostName: "Mauricio",
+  inviteEmoji: "🔥",
+  gateHeadline: "Não vim com joguinho. Vim com date marcado.",
+  gateSub: "Isso aqui não é bem um convite qualquer. É a sua próxima boa decisão.",
+  message: "Faz tempo que eu queria te chamar pra sair, sem enrolação e sem joguinho. Então resolvi fazer isso: um convite só seu, com data marcada e tudo certo. Só falta você dizer sim.",
+  eventDateISO: "2026-08-15T20:00:00",
+  eventDateLabel: "15 de agosto de 2026",
+  eventTime: "20h00",
+  eventLocation: "A combinar",
+  eventLocationLink: "",
+  whatsappNumber: "",
+  btnYesLabel: "Bora, eu vou 🔥",
+  btnMaybeLabel: "Deixa eu pensar 😅",
+  rsvpYesMessage: "Boa! Já anota na agenda, vai ser bom 🔥",
+  rsvpMaybeMessage: "Combinado, pensa com calma, só não demora muito 😏",
+  waMessageYes: "Oi {host}! Recebi o convite O DATE e a resposta é: SIM, bora! 🔥",
+  waMessageMaybe: "Oi {host}! Vi o convite O DATE, ainda tô pensando, já te aviso 😏",
+};
+
+const CLIMAS = {
+  romance: {
+    gateHeadline: "Não vim com joguinho. Vim com date marcado.",
+    gateSub: "Isso aqui não é bem um convite qualquer. É a sua próxima boa decisão.",
+    message: "Faz tempo que eu queria te chamar pra sair, sem enrolação e sem joguinho. Então resolvi fazer isso: um convite só seu, com data marcada e tudo certo. Só falta você dizer sim.",
+    emoji: "🔥"
+  },
+  'ar-livre': {
+    gateHeadline: "Tenho um plano ao ar livre com o seu nome escrito nele.",
+    gateSub: "Sol, um passeio bom e ninguém olhando pro relógio.",
+    message: "Pensei num programa simples: a gente lá fora, sem pressa, vendo o dia passar. Separei um lugar bonito e um horário certo. Só falta combinar com você.",
+    emoji: "🌅"
+  },
+  diversao: {
+    gateHeadline: "Separei um programa punk pra você. Sem cerimônia, só diversão.",
+    gateSub: "Nada de jantar careta. Isso aqui é pra rir alto.",
+    message: "Cansei de convite morno. Escolhi um programa pra gente se divertir de verdade, sem formalidade nenhuma. Bora colocar isso na agenda?",
+    emoji: "🎳"
+  },
+  casa: {
+    gateHeadline: "Um convite pra desacelerar, só a gente e um clima gostoso.",
+    gateSub: "Sem pressa, sem plano cheio. Só a companhia certa.",
+    message: "Separei uma noite tranquila, daquelas que valem mais que qualquer badalação. Comida boa, papo bom e tempo sobrando. Só falta você topar.",
+    emoji: "🍷"
+  },
+  misterio: {
+    gateHeadline: "Não vou contar tudo agora. Só vou dizer que vale a pena.",
+    gateSub: "Um convite com surpresa dentro. Confia em mim.",
+    message: "Prefiro não entregar o jogo todo de uma vez. Só adianto que separei algo que você vai gostar, e que o resto é surpresa. Topa descobrir comigo?",
+    emoji: "🎁"
+  },
+  branco: {
+    gateHeadline: "",
+    gateSub: "",
+    message: "",
+    emoji: ""
+  }
+};
+
+const MESES = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+
+function val(id){
+  const el = document.getElementById(id);
+  return el ? el.value.trim() : '';
+}
+
+function formatDateLabel(dateStr){
+  const parts = dateStr.split('-');
+  if (parts.length !== 3) return '';
+  const y = parts[0];
+  const m = parseInt(parts[1], 10);
+  const d = parseInt(parts[2], 10);
+  if (!m || !d || !MESES[m-1]) return '';
+  return d + ' de ' + MESES[m-1] + ' de ' + y;
+}
+
+function formatTimeLabel(timeStr){
+  const parts = timeStr.split(':');
+  if (parts.length < 2) return '';
+  return parts[0] + 'h' + parts[1];
+}
+
+function getValues(){
+  const dateStr = val('f-date');
+  const timeStr = val('f-time');
+  return {
+    guestName: val('f-guestName') || DEFAULTS.guestName,
+    hostName: val('f-hostName') || DEFAULTS.hostName,
+    inviteEmoji: val('f-emoji'),
+    gateHeadline: val('f-gateHeadline') || DEFAULTS.gateHeadline,
+    gateSub: val('f-gateSub') || DEFAULTS.gateSub,
+    message: val('f-message') || DEFAULTS.message,
+    eventDateISO: (dateStr && timeStr) ? (dateStr + 'T' + timeStr + ':00') : DEFAULTS.eventDateISO,
+    eventDateLabel: dateStr ? (formatDateLabel(dateStr) || DEFAULTS.eventDateLabel) : DEFAULTS.eventDateLabel,
+    eventTime: timeStr ? (formatTimeLabel(timeStr) || DEFAULTS.eventTime) : DEFAULTS.eventTime,
+    eventLocation: val('f-location') || DEFAULTS.eventLocation,
+    eventLocationLink: val('f-locationLink'),
+    whatsappNumber: val('f-whatsappNumber').replace(/\D/g, ''),
+    btnYesLabel: val('f-btnYesLabel') || DEFAULTS.btnYesLabel,
+    btnMaybeLabel: val('f-btnMaybeLabel') || DEFAULTS.btnMaybeLabel,
+    rsvpYesMessage: val('f-rsvpYesMessage') || DEFAULTS.rsvpYesMessage,
+    rsvpMaybeMessage: val('f-rsvpMaybeMessage') || DEFAULTS.rsvpMaybeMessage,
+    waMessageYes: val('f-waMessageYes') || DEFAULTS.waMessageYes,
+    waMessageMaybe: val('f-waMessageMaybe') || DEFAULTS.waMessageMaybe,
+  };
+}
+
+// escapa o texto pra poder entrar com segurança dentro de uma string
+// JS de aspas duplas no arquivo gerado (evita quebrar o script gerado)
+function escJs(str){
+  return String(str)
+    .replace(/\\/g, '\\\\')
+    .replace(/"/g, '\\"')
+    .replace(/\r\n|\r|\n/g, '\\n')
+    .replace(/<\/script/gi, '<\\/script');
+}
+
+function buildHTML(v){
+  const map = {
+    '%%GUEST_NAME%%': v.guestName,
+    '%%HOST_NAME%%': v.hostName,
+    '%%INVITE_EMOJI%%': v.inviteEmoji,
+    '%%GATE_HEADLINE%%': v.gateHeadline,
+    '%%GATE_SUB%%': v.gateSub,
+    '%%MESSAGE%%': v.message,
+    '%%EVENT_DATE_ISO%%': v.eventDateISO,
+    '%%EVENT_DATE_LABEL%%': v.eventDateLabel,
+    '%%EVENT_TIME%%': v.eventTime,
+    '%%EVENT_LOCATION%%': v.eventLocation,
+    '%%EVENT_LOCATION_LINK%%': v.eventLocationLink,
+    '%%WHATSAPP_NUMBER%%': v.whatsappNumber,
+    '%%BTN_YES_LABEL%%': v.btnYesLabel,
+    '%%BTN_MAYBE_LABEL%%': v.btnMaybeLabel,
+    '%%RSVP_YES_MESSAGE%%': v.rsvpYesMessage,
+    '%%RSVP_MAYBE_MESSAGE%%': v.rsvpMaybeMessage,
+    '%%WA_MESSAGE_YES%%': v.waMessageYes,
+    '%%WA_MESSAGE_MAYBE%%': v.waMessageMaybe,
+  };
+  let out = TEMPLATE;
+  Object.keys(map).forEach(function(token){
+    out = out.split(token).join(escJs(map[token]));
+  });
+  return out;
+}
+
+function slugify(str){
+  return String(str)
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-+|-+$)/g, '') || 'convite';
+}
+
+function updatePreview(){
+  const iframe = document.getElementById('preview');
+  iframe.srcdoc = buildHTML(getValues());
+}
+
+document.getElementById('invite-form').addEventListener('input', updatePreview);
+updatePreview();
+
+/* ============================================================
+   ESCOLHA O CLIMA — pré-preenche frase de abertura + mensagem
+   com sugestões prontas no tom O DATE. Tudo continua editável
+   nos campos abaixo depois de escolher.
+============================================================ */
+(function climaPicker(){
+  const grid = document.getElementById('clima-grid');
+  if (!grid) return;
+  const cards = grid.querySelectorAll('.clima-card');
+  const emojiField = document.getElementById('f-emoji');
+
+  cards.forEach(function(card){
+    card.addEventListener('click', function(){
+      cards.forEach(function(c){ c.classList.remove('selected'); });
+      card.classList.add('selected');
+
+      const key = card.dataset.clima;
+      const preset = CLIMAS[key];
+      if (!preset) return;
+
+      const gateHeadlineField = document.getElementById('f-gateHeadline');
+      const gateSubField = document.getElementById('f-gateSub');
+      const messageField = document.getElementById('f-message');
+
+      if (preset.gateHeadline) gateHeadlineField.value = preset.gateHeadline;
+      if (preset.gateSub) gateSubField.value = preset.gateSub;
+      if (preset.message) messageField.value = preset.message;
+      if (preset.emoji && !emojiField.value) emojiField.value = preset.emoji;
+
+      updatePreview();
+    });
+  });
+})();
+
+/* ============================================================
+   CHIPS DE EMOJI — atalho pra preencher o campo "Emoji do convite"
+============================================================ */
+(function emojiChips(){
+  const wrap = document.getElementById('emoji-chips');
+  if (!wrap) return;
+  const chips = wrap.querySelectorAll('.emoji-chip');
+  const emojiField = document.getElementById('f-emoji');
+
+  chips.forEach(function(chip){
+    chip.addEventListener('click', function(){
+      chips.forEach(function(c){ c.classList.remove('selected'); });
+      chip.classList.add('selected');
+      emojiField.value = chip.dataset.emoji;
+      updatePreview();
+    });
+  });
+})();
+
+/* ============================================================
+   GERADOR DE MENSAGEM COM IA — usa a skill copy-humana
+   Como este arquivo é HTML local, sem servidor, ele não pode
+   chamar a API do Claude sozinho (exigiria expor uma chave
+   secreta no código, o que nunca é seguro). Em vez disso, este
+   bloco monta um prompt pronto — já com as regras da skill
+   copy-humana embutidas — pra você colar no Claude de verdade,
+   e depois trazer a resposta de volta pro campo de mensagem.
+============================================================ */
+(function aiMessageGenerator(){
+  const toggleBtn = document.getElementById('btn-ai-toggle');
+  const box = document.getElementById('ai-box');
+  const buildBtn = document.getElementById('btn-ai-build');
+  const promptWrap = document.getElementById('ai-prompt-wrap');
+  const promptOut = document.getElementById('ai-prompt-out');
+  const promptActions = document.getElementById('ai-prompt-actions');
+  const copyBtn = document.getElementById('btn-ai-copy');
+  const openBtn = document.getElementById('btn-ai-open');
+  const pasteWrap = document.getElementById('ai-paste-wrap');
+  const pasteIn = document.getElementById('ai-paste-in');
+  const pasteActions = document.getElementById('ai-paste-actions');
+  const useBtn = document.getElementById('btn-ai-use');
+  const aiMsg = document.getElementById('ai-msg');
+  const messageField = document.getElementById('f-message');
+
+  toggleBtn.addEventListener('click', function(){
+    box.hidden = !box.hidden;
+  });
+
+  function buildAiPrompt(){
+    const guestName = val('f-guestName') || 'a pessoa convidada';
+    const dateStr = val('f-date');
+    const timeStr = val('f-time');
+    const dateLabel = dateStr ? (formatDateLabel(dateStr) || dateStr) : '';
+    const timeLabel = timeStr ? (formatTimeLabel(timeStr) || timeStr) : '';
+    const location = val('f-location') || '(local ainda não definido)';
+    const context = val('f-ai-context');
+
+    let publico = 'Quem vai receber: ' + guestName + '. Vou convidar essa pessoa pra um encontro em ' + location + '.';
+    if (dateLabel){
+      publico += ' Vai ser no dia ' + dateLabel + (timeLabel ? ', às ' + timeLabel : '') + '.';
+    }
+    if (context){
+      publico += ' Contexto extra: ' + context;
+    }
+
+    return [
+      'Use a skill copy-humana pra escrever o texto abaixo.',
+      '',
+      'Regras da skill copy-humana que valem pra este texto:',
+      '1. Escreva como gente escreve pra gente, nunca como manual corporativo.',
+      '2. Troque abstração por detalhe observável, e promessa vaga por algo concreto.',
+      '3. Nunca use hífen nem travessão, nem os caracteres -, –, —, ‑, em lugar nenhum do texto. Se precisar separar ideia, use vírgula, dois pontos, ponto final ou quebra de linha.',
+      '4. Sem clichê de abertura, sem frase bonita e vazia, sem exagero ou dramatização sem motivo.',
+      '5. No máximo 1 emoji no texto inteiro, ou zero.',
+      '',
+      'O público desta copy já está confirmado, é só isso, não precisa perguntar de novo:',
+      publico,
+      '',
+      'Tarefa: escreva uma mensagem pessoal de 3 a 5 frases pra aparecer dentro de um convite de encontro chamado O DATE. Tom confiante e direto, com charme e um toque de flerte leve, nunca piegas, nunca genérico, e nunca forçado ou vulgar. A mensagem não deve repetir data, hora ou local, isso já aparece em outro lugar da página. O foco é no porquê, no sentimento, num detalhe específico.',
+      '',
+      'Responda só com o texto final da mensagem, pronto pra colar, sem explicação antes ou depois, sem aspas envolvendo o texto.'
+    ].join('\n');
+  }
+
+  buildBtn.addEventListener('click', function(){
+    promptOut.value = buildAiPrompt();
+    promptWrap.hidden = false;
+    promptActions.hidden = false;
+    pasteWrap.hidden = false;
+    pasteActions.hidden = false;
+    aiMsg.textContent = 'Prompt pronto. Copie, cole no Claude, e traga a resposta pra caixa abaixo.';
+    aiMsg.classList.remove('error-text');
+  });
+
+  copyBtn.addEventListener('click', function(){
+    const text = promptOut.value;
+    function ok(){
+      aiMsg.textContent = 'Prompt copiado! Agora é só colar no Claude.';
+      aiMsg.classList.remove('error-text');
+    }
+    function fail(){
+      promptOut.focus();
+      promptOut.select();
+      aiMsg.textContent = 'Não consegui copiar sozinho — selecionei o texto, use Ctrl/Cmd+C.';
+      aiMsg.classList.add('error-text');
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(ok, fail);
+    } else {
+      fail();
+    }
+  });
+
+  openBtn.addEventListener('click', function(){
+    window.open('https://claude.ai/new', '_blank', 'noopener');
+  });
+
+  useBtn.addEventListener('click', function(){
+    const text = pasteIn.value.trim();
+    if (!text){
+      aiMsg.textContent = 'Cole a resposta do Claude na caixa acima primeiro.';
+      aiMsg.classList.add('error-text');
+      pasteIn.focus();
+      return;
+    }
+    messageField.value = text;
+    messageField.classList.remove('error');
+    updatePreview();
+    aiMsg.textContent = 'Mensagem aplicada no campo abaixo. Dá pra ajustar à mão se quiser.';
+    aiMsg.classList.remove('error-text');
+  });
+})();
+
+/* ============================================================
+   PUBLICAR — cada convite vira um link novo e permanente,
+   sem token nenhum aqui na tela. Quem preenche o formulário só
+   clica em "Publicar e copiar link": esta página manda os dados
+   pro Worker (Cloudflare, o-date-proxy), que guarda um token
+   secreto do lado dele e cria um armazenamento novo (Gist) pra
+   cada convite. O link final é sempre a mesma página hospedada
+   + ?g=<id> desse armazenamento — por isso nunca expira e nunca
+   precisa mexer em nada técnico pra usar.
+============================================================ */
+(function hosting(){
+  const WORKER_URL = 'https://o-date-proxy.grupo-ndea.workers.dev';
+  const PAGES_URL = 'https://grupondea.github.io/o-date/';
+
+  const publishBtn = document.getElementById('btn-publish');
+  const formMsg = document.getElementById('form-msg');
+  const linkWrap = document.getElementById('publish-link-wrap');
+  const linkOut = document.getElementById('publish-link-out');
+  const linkActions = document.getElementById('publish-link-actions');
+  const copyLinkBtn = document.getElementById('btn-publish-copy');
+
+  function friendlyError(status){
+    if (status === 502) return 'O GitHub recusou o pedido agora (às vezes é limite de uso). Espere um minuto e tente de novo.';
+    if (status === 400) return 'Alguma coisa no formulário não foi entendida. Confira os campos e tente de novo.';
+    if (status === 500) return 'O servidor de publicação está com um problema de configuração. Avise o Mauricio.';
+    return 'Não consegui publicar agora (código ' + status + '). Tente de novo em instantes.';
+  }
+
+  publishBtn.addEventListener('click', function(){
+    const requiredIds = ['f-guestName', 'f-date', 'f-time', 'f-location', 'f-message'];
+    let firstMissing = null;
+    requiredIds.forEach(function(id){
+      const el = document.getElementById(id);
+      const empty = !el.value.trim();
+      el.classList.toggle('error', empty);
+      if (empty && !firstMissing) firstMissing = el;
+    });
+    if (firstMissing){
+      formMsg.textContent = 'Faltam campos obrigatórios (marcados com *) — preencha e tente de novo.';
+      formMsg.classList.add('error-text');
+      firstMissing.focus();
+      return;
+    }
+
+    formMsg.classList.remove('error-text');
+    formMsg.textContent = 'Publicando...';
+    publishBtn.disabled = true;
+    linkWrap.hidden = true;
+    linkActions.hidden = true;
+
+    const values = getValues();
+
+    fetch(WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(values)
+    })
+      .then(function(res){
+        if (!res.ok) return Promise.reject({ status: res.status });
+        return res.json();
+      })
+      .then(function(data){
+        const finalLink = PAGES_URL + '?g=' + encodeURIComponent(data.id);
+        linkOut.value = finalLink;
+        linkWrap.hidden = false;
+        linkActions.hidden = false;
+        formMsg.textContent = 'Publicado! Envie o link acima pra ' + values.guestName + '.';
+      })
+      .catch(function(err){
+        formMsg.textContent = err && err.status ? friendlyError(err.status) : 'Não consegui publicar agora. Confira sua internet e tente de novo.';
+        formMsg.classList.add('error-text');
+      })
+      .finally(function(){
+        publishBtn.disabled = false;
+      });
+  });
+
+  copyLinkBtn.addEventListener('click', function(){
+    const text = linkOut.value;
+    function ok(){
+      formMsg.textContent = 'Link copiado!';
+      formMsg.classList.remove('error-text');
+    }
+    function fail(){
+      linkOut.focus();
+      linkOut.select();
+      formMsg.textContent = 'Não consegui copiar sozinho — selecionei o link, use Ctrl/Cmd+C.';
+      formMsg.classList.add('error-text');
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(ok, fail);
+    } else {
+      fail();
+    }
+  });
+})();
+
+document.getElementById('btn-generate').addEventListener('click', function(){
+  const requiredIds = ['f-guestName', 'f-date', 'f-time', 'f-location', 'f-message'];
+  let firstMissing = null;
+  requiredIds.forEach(function(id){
+    const el = document.getElementById(id);
+    const empty = !el.value.trim();
+    el.classList.toggle('error', empty);
+    if (empty && !firstMissing) firstMissing = el;
+  });
+
+  const msg = document.getElementById('form-msg');
+  if (firstMissing){
+    msg.textContent = 'Faltam campos obrigatórios (marcados com *) — preencha e tente de novo.';
+    msg.classList.add('error-text');
+    firstMissing.focus();
+    return;
+  }
+  msg.classList.remove('error-text');
+
+  const values = getValues();
+  const html = buildHTML(values);
+  const blob = new Blob([html], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  const filename = 'o-date-' + slugify(values.guestName) + '.html';
+
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+
+  msg.textContent = 'Convite gerado e baixado como "' + filename + '". Envie só esse arquivo pra ' + values.guestName + ' — ela não vê este painel.';
+});
+</script>
+</body>
+</html>
