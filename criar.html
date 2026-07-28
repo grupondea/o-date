@@ -664,6 +664,7 @@ const TEMPLATE = `<!DOCTYPE html>
           <button class="btn btn-ghost" id="btn-maybe">Ainda não sei</button>
         </div>
         <p id="rsvp-response"></p>
+        <a id="btn-calendar" class="btn btn-ghost" href="#" target="_blank" rel="noopener" style="display:none; margin-top:14px;">📅 Adicionar ao Google Agenda</a>
       </div>
 
     </div>
@@ -874,9 +875,35 @@ document.getElementById('btn-continue').addEventListener('click', function(){ go
   const yes = document.getElementById('btn-yes');
   const maybe = document.getElementById('btn-maybe');
   const response = document.getElementById('rsvp-response');
+  const calBtn = document.getElementById('btn-calendar');
 
-  function waLink(text){
-    return 'https://wa.me/' + CONFIG.whatsappNumber + '?text=' + encodeURIComponent(text.replace('{host}', CONFIG.hostName));
+  function pad2(n){ return String(n).padStart(2,'0'); }
+
+  function calendarLink(){
+    const start = new Date(CONFIG.eventDateISO);
+    const end = new Date(start.getTime() + 2*60*60*1000);
+    function fmt(d){
+      return d.getFullYear() + pad2(d.getMonth()+1) + pad2(d.getDate()) + 'T' + pad2(d.getHours()) + pad2(d.getMinutes()) + '00';
+    }
+    const title = 'O DATE — ' + CONFIG.hostName + ' & ' + CONFIG.guestName;
+    const details = (CONFIG.message ? CONFIG.message + '\n\n' : '') + 'Confirmado pelo O DATE.';
+    const params = new URLSearchParams({
+      action: 'TEMPLATE',
+      text: title,
+      dates: fmt(start) + '/' + fmt(end),
+      details: details,
+      location: CONFIG.eventLocation || '',
+      ctz: 'America/Sao_Paulo'
+    });
+    return 'https://calendar.google.com/calendar/render?' + params.toString();
+  }
+
+  function waLink(text, withCalendar){
+    let full = text.replace('{host}', CONFIG.hostName);
+    if (withCalendar){
+      full += '\n\n📅 Adiciona na agenda: ' + calendarLink();
+    }
+    return 'https://wa.me/' + CONFIG.whatsappNumber + '?text=' + encodeURIComponent(full);
   }
 
   yes.addEventListener('click', function(){
@@ -884,8 +911,12 @@ document.getElementById('btn-continue').addEventListener('click', function(){ go
     maybe.disabled = true;
     response.textContent = CONFIG.rsvpYesMessage;
     response.classList.add('show');
+    if (calBtn){
+      calBtn.href = calendarLink();
+      calBtn.style.display = 'inline-flex';
+    }
     if (CONFIG.whatsappNumber){
-      window.open(waLink(CONFIG.waMessageYes), '_blank', 'noopener');
+      window.open(waLink(CONFIG.waMessageYes, true), '_blank', 'noopener');
     }
   });
 
@@ -895,7 +926,7 @@ document.getElementById('btn-continue').addEventListener('click', function(){ go
     response.textContent = CONFIG.rsvpMaybeMessage;
     response.classList.add('show');
     if (CONFIG.whatsappNumber){
-      window.open(waLink(CONFIG.waMessageMaybe), '_blank', 'noopener');
+      window.open(waLink(CONFIG.waMessageMaybe, false), '_blank', 'noopener');
     }
   });
 })();
