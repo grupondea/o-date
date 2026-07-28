@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>O DATE — Convite</title>
+<meta name="theme-color" content="#1a0603">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500;1,9..144,600&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  /* ============================================================
+     O DATE — versão HOSPEDADA (GitHub Pages)
+     Este arquivo NÃO tem os dados do convite dentro dele. Ele lê
+     o parâmetro ?g=<id-do-gist> da própria URL e busca os dados
+     atuais na API do GitHub. É por isso que o mesmo link sempre
+     mostra o convite mais recente publicado pelo painel.
+     Suba este arquivo UMA VEZ só pro GitHub Pages — nunca mais
+     precisa mexer nele depois disso.
+  ============================================================ */
+
+  :root{
+    --bg-1:#1a0603;
+    --bg-2:#3a0d02;
+    --bg-3:#7a1d02;
+    --bg-4:#c93b12;
+    --rose:#ff4d1c;
+    --rose-soft:#ff7a45;
+    --blush:#ffc9a8;
+    --gold:#ffb648;
+    --gold-soft:#ffd27a;
+    --cream:#fff6ef;
+    --ink:#2a0900;
+    --glass: rgba(255,255,255,.06);
+    --glass-strong: rgba(255,255,255,.11);
+    --border: rgba(255,255,255,.16);
+    --shadow: 0 20px 60px rgba(20,4,16,.45);
+    --font-display: 'Fraunces', serif;
+    --font-body: 'Manrope', sans-serif;
+    --ease: cubic-bezier(.16,1,.3,1);
+  }
+
+  *{ box-sizing:border-box; }
+  html,body{ height:100%; }
+  body{
+    margin:0;
+    min-height:100vh;
+    font-family: var(--font-body);
+    color: var(--cream);
+    background:
+      radial-gradient(60% 50% at 15% 10%, rgba(255,77,28,.28), transparent 60%),
+      radial-gradient(55% 45% at 85% 15%, rgba(255,182,72,.18), transparent 60%),
+      radial-gradient(70% 60% at 50% 100%, rgba(201,59,18,.4), transparent 60%),
+      linear-gradient(160deg, var(--bg-1), var(--bg-2) 45%, var(--bg-3) 85%);
+    background-attachment: fixed;
+    overflow-x: hidden;
+    position: relative;
+  }
+
+  /* textura sutil de grão, pra não ficar "chapado" */
+  body::after{
+    content:"";
+    position: fixed; inset:0;
+    pointer-events:none;
+    opacity:.05;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  /* partículas flutuantes */
+  #particles{ position: fixed; inset:0; overflow:hidden; pointer-events:none; z-index:0; }
+  .particle{
+    position:absolute; bottom:-10vh; font-size: 20px; opacity:0;
+    animation-name: floatUp; animation-timing-function: linear; animation-iteration-count: infinite;
+    filter: drop-shadow(0 0 6px rgba(255,201,168,.4));
+  }
+  @keyframes floatUp{
+    0%{ transform: translateY(0) translateX(0) rotate(0deg); opacity:0; }
+    8%{ opacity:.85; }
+    92%{ opacity:.7; }
+    100%{ transform: translateY(-115vh) translateX(var(--drift,40px)) rotate(300deg); opacity:0; }
+  }
+
+  main{ position:relative; z-index:1; }
+
+  .screen{
+    min-height:100vh;
+    width:100%;
+    display:none;
+    align-items:center;
+    justify-content:center;
+    padding: 8vh 6vw;
+  }
+  .screen.active{ display:flex; }
+  .screen-inner{
+    width:100%; max-width: 620px;
+    text-align:center;
+    animation: riseIn .9s var(--ease) both;
+  }
+  @keyframes riseIn{
+    from{ opacity:0; transform: translateY(26px) scale(.98); }
+    to{ opacity:1; transform: translateY(0) scale(1); }
+  }
+
+  .eyebrow{
+    display:inline-flex; align-items:center; gap:8px;
+    font-family: var(--font-body); font-weight:700; letter-spacing:.22em;
+    font-size:.72rem; text-transform:uppercase; color: var(--gold-soft);
+    background: var(--glass); border:1px solid var(--border);
+    padding: 8px 16px; border-radius: 999px; margin-bottom: 22px;
+  }
+  .eyebrow .dot{ width:6px; height:6px; border-radius:50%; background: var(--rose); box-shadow:0 0 10px var(--rose); }
+
+  h1.display{
+    font-family: var(--font-display); font-weight:500; font-style: italic;
+    line-height: 1.08; margin: 0 0 18px;
+    font-size: clamp(2.2rem, 6vw, 3.6rem);
+    background: linear-gradient(100deg, var(--cream) 30%, var(--blush) 55%, var(--gold-soft) 80%);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  p.lede{
+    font-size: clamp(1rem, 2vw, 1.15rem); line-height:1.6; color: rgba(255,246,239,.82);
+    max-width: 46ch; margin: 0 auto 34px;
+  }
+
+  .btn-row{ display:flex; gap:14px; justify-content:center; flex-wrap:wrap; margin-top: 8px; }
+  button{ font-family: var(--font-body); cursor:pointer; border:none; }
+
+  .btn{
+    font-weight:700; font-size: .98rem; padding: 15px 30px; border-radius: 999px;
+    transition: transform .25s var(--ease), box-shadow .25s var(--ease), background .25s;
+    position: relative;
+  }
+  .btn-primary{
+    color: var(--ink);
+    background: linear-gradient(100deg, var(--gold-soft), var(--rose-soft));
+    box-shadow: 0 12px 30px rgba(255,77,28,.4);
+  }
+  .btn-primary:hover{ transform: translateY(-3px); box-shadow: 0 16px 40px rgba(255,77,28,.55); }
+  .btn-ghost{
+    color: var(--cream);
+    background: var(--glass);
+    border:1px solid var(--border) !important;
+    position:relative;
+  }
+  .btn-ghost:hover{ background: var(--glass-strong); }
+
+  #dodge-wrap{ display:inline-block; transition: transform .35s cubic-bezier(.34,1.56,.64,1); }
+
+  .hint{ margin-top:16px; font-size:.8rem; color: rgba(255,246,239,.5); }
+
+  /* --- stage 2 : reveal / landing do "app" --- */
+  .wordmark{
+    font-family: var(--font-display); font-style: italic; font-weight:600;
+    font-size: clamp(2.6rem, 9vw, 5rem); letter-spacing:.01em; margin:0 0 8px;
+    background: linear-gradient(100deg, var(--gold-soft), var(--cream) 45%, var(--rose-soft));
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  .wordmark-spark{ display:block; font-size: 1.4rem; margin-bottom: 10px; }
+  .tagline{ font-size: 1rem; letter-spacing:.04em; color: var(--blush); margin-bottom: 40px; }
+
+  .scroll-cue{ margin-top: 46px; display:flex; flex-direction:column; align-items:center; gap:6px; opacity:.75; }
+  .scroll-cue .arrow{ width:10px; height:10px; border-right:2px solid var(--gold-soft); border-bottom:2px solid var(--gold-soft); transform: rotate(45deg); animation: bob 1.6s ease-in-out infinite; }
+  @keyframes bob{ 0%,100%{ transform: translateY(0) rotate(45deg);} 50%{ transform: translateY(6px) rotate(45deg);} }
+
+  /* --- stage 3 : convite real --- */
+  .card{
+    background: var(--glass);
+    border:1px solid var(--border);
+    border-radius: 26px;
+    padding: 34px 30px;
+    -webkit-backdrop-filter: blur(18px);
+    backdrop-filter: blur(18px);
+    box-shadow: var(--shadow);
+    margin-bottom: 22px;
+    text-align:left;
+  }
+  .card h2{
+    font-family: var(--font-display); font-style:italic; font-weight:500;
+    font-size: 1.5rem; margin: 0 0 10px; color: var(--cream);
+  }
+  .card p{ margin:0; line-height:1.7; color: rgba(255,246,239,.85); font-size:.98rem; }
+
+  .countdown{ display:flex; gap:10px; justify-content:center; margin: 6px 0 4px; flex-wrap: wrap; }
+  .cd-box{
+    background: var(--glass-strong); border:1px solid var(--border); border-radius:16px;
+    padding: 14px 10px; min-width: 68px; text-align:center;
+  }
+  .cd-num{ font-family: var(--font-display); font-size: 1.7rem; font-weight:600; display:block; color: var(--gold-soft); }
+  .cd-label{ font-size:.62rem; letter-spacing:.14em; text-transform:uppercase; color: rgba(255,246,239,.6); }
+  .cd-today{ font-family: var(--font-display); font-style:italic; font-size:1.4rem; color: var(--rose-soft); text-align:center; padding: 10px 0; }
+
+  .details-grid{ display:grid; grid-template-columns: repeat(auto-fit, minmax(150px,1fr)); gap:12px; margin-top:6px; }
+  .detail{
+    background: var(--glass); border:1px solid var(--border); border-radius:16px; padding:16px;
+    text-align:left;
+  }
+  .detail .icon{ font-size:1.3rem; margin-bottom:6px; display:block; }
+  .detail .label{ font-size:.68rem; text-transform:uppercase; letter-spacing:.1em; color: var(--blush); margin-bottom:3px; }
+  .detail .value{ font-size:.95rem; font-weight:600; color: var(--cream); }
+  .detail a.value{ color: var(--gold-soft); text-decoration:none; border-bottom:1px dashed var(--gold-soft); }
+
+  .rsvp{ text-align:center; }
+  .rsvp .btn-row{ margin-bottom: 6px; }
+  #rsvp-response{
+    min-height: 26px; font-size:.95rem; color: var(--gold-soft); margin-top: 14px;
+    opacity:0; transform: translateY(6px); transition: all .4s var(--ease);
+  }
+  #rsvp-response.show{ opacity:1; transform: translateY(0); }
+
+  .btn[disabled]{ opacity:.55; cursor:default; transform:none !important; }
+  .chosen{ outline: 2px solid var(--gold-soft); outline-offset:2px; }
+
+  footer.sig{
+    text-align:center; padding: 40px 6vw 60px; font-size:.85rem; color: rgba(255,246,239,.55);
+    position:relative; z-index:1;
+  }
+  footer.sig b{ color: var(--blush); font-weight:700; }
+
+  /* --- telas de carregamento / erro (só existem nesta versão hospedada) --- */
+  .spinner{
+    width:34px; height:34px; border-radius:50%;
+    border:3px solid var(--glass-strong); border-top-color: var(--gold-soft);
+    animation: spin 1s linear infinite; margin: 0 auto 22px;
+  }
+  @keyframes spin{ to{ transform: rotate(360deg); } }
+
+  @media (max-width:480px){
+    .card{ padding: 26px 20px; }
+    .cd-box{ min-width: 58px; padding: 12px 6px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="particles"></div>
+
+<main>
+
+  <!-- ===================== STAGE 0 — Carregando ===================== -->
+  <section class="screen active" data-screen="0">
+    <div class="screen-inner">
+      <div class="spinner"></div>
+      <p class="lede" style="margin-bottom:0;">Abrindo o convite…</p>
+    </div>
+  </section>
+
+  <!-- ===================== STAGE -1 — Erro / convite não encontrado ===================== -->
+  <section class="screen" data-screen="erro">
+    <div class="screen-inner">
+      <span class="eyebrow"><span class="dot"></span> Ops</span>
+      <h1 class="display" style="font-size:clamp(1.8rem,5vw,2.4rem);">Não consegui abrir esse convite.</h1>
+      <p class="lede" id="error-detail">Confira se o link está completo e certo, ou peça pra quem te chamou gerar de novo.</p>
+    </div>
+  </section>
+
+  <!-- ===================== STAGE 1 — Portal / gate ===================== -->
+  <section class="screen" data-screen="1">
+    <div class="screen-inner">
+      <span class="eyebrow"><span class="dot"></span> <span id="eyebrow-name">Para você</span></span>
+      <h1 class="display" id="gate-headline">Não vim com joguinho. Vim com date marcado.</h1>
+      <p class="lede" id="gate-sub">Isso aqui não é bem um convite qualquer. É a sua próxima boa decisão.</p>
+      <div class="btn-row">
+        <button class="btn btn-primary" id="btn-open">Bora ✦</button>
+        <span id="dodge-wrap">
+          <button class="btn btn-ghost" id="btn-decline">Depois eu vejo</button>
+        </span>
+      </div>
+      <p class="hint">(esse botão aí foge um pouco, já aviso 😏)</p>
+      <p id="decline-msg" class="hint" style="opacity:0; transition:opacity .4s;">foge não, quando quiser é só voltar aqui 😏</p>
+    </div>
+  </section>
+
+  <!-- ===================== STAGE 2 — Reveal / "landing do app" ===================== -->
+  <section class="screen" data-screen="2">
+    <div class="screen-inner">
+      <span class="wordmark-spark">✦ ✧ ✦</span>
+      <h1 class="wordmark">O DATE</h1>
+      <p class="tagline">só precisa de uma noite pra mudar tudo.</p>
+      <p class="lede">Isso aqui não é um app de verdade. É um convite de verdade, direto ao ponto, com a cara de um lançamento.</p>
+      <button class="btn btn-primary" id="btn-continue">Bora ver →</button>
+      <div class="scroll-cue"><span class="arrow"></span></div>
+    </div>
+  </section>
+
+  <!-- ===================== STAGE 3 — Convite real ===================== -->
+  <section class="screen" data-screen="3">
+    <div class="screen-inner" style="max-width:560px;">
+
+      <span class="eyebrow"><span class="dot"></span> Convite</span>
+      <h1 class="display" style="font-size:clamp(1.9rem,5vw,2.6rem);" id="invite-headline">Ei, <span id="guest-name-inline">você</span> 😏</h1>
+
+      <div class="card">
+        <p id="invite-message">Mensagem pessoal aqui.</p>
+      </div>
+
+      <div class="card" id="countdown-card">
+        <h2>Faltam</h2>
+        <div class="countdown" id="countdown"></div>
+      </div>
+
+      <div class="card">
+        <h2>Detalhes</h2>
+        <div class="details-grid">
+          <div class="detail">
+            <span class="icon">📅</span>
+            <span class="label">Data</span>
+            <span class="value" id="detail-date">—</span>
+          </div>
+          <div class="detail">
+            <span class="icon">🕗</span>
+            <span class="label">Horário</span>
+            <span class="value" id="detail-time">—</span>
+          </div>
+          <div class="detail" id="detail-location-wrap">
+            <span class="icon">📍</span>
+            <span class="label">Local</span>
+            <span class="value" id="detail-location">—</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card rsvp">
+        <h2 style="text-align:center;">Vai ter lugar guardado com seu nome</h2>
+        <div class="btn-row">
+          <button class="btn btn-primary" id="btn-yes">Sim, eu vou</button>
+          <button class="btn btn-ghost" id="btn-maybe">Ainda não sei</button>
+        </div>
+        <p id="rsvp-response"></p>
+      </div>
+
+    </div>
+  </section>
+
+</main>
+
+<footer class="sig">
+  feito com 🔥 por <b id="host-name-footer">alguém especial</b> · O DATE
+</footer>
+
+<script>
+/* ============================================================
+   Esta versão não tem CONFIG fixo. Ela lê "?g=<id-do-gist>" da
+   própria URL, busca o conteúdo desse Gist na API do GitHub, e
+   só então desenha o convite. É assim que o mesmo link sempre
+   mostra o convite mais recente publicado pelo painel.
+============================================================ */
+
+function setText(id, text){
+  const el = document.getElementById(id);
+  if (el) el.textContent = text;
+}
+
+function goTo(stage){
+  document.querySelectorAll('.screen').forEach(function(sec){
+    sec.classList.toggle('active', sec.dataset.screen === String(stage));
+  });
+  window.scrollTo(0, 0);
+}
+
+function showError(detail){
+  if (detail) setText('error-detail', detail);
+  goTo('erro');
+}
+
+// --- partículas flutuantes de fundo (independe dos dados do convite) ---
+(function particles(){
+  const wrap = document.getElementById('particles');
+  const glyphs = ['🔥','✨','♡','✦','🧡'];
+  const N = 16;
+  for (let i=0;i<N;i++){
+    const s = document.createElement('span');
+    s.className = 'particle';
+    s.textContent = glyphs[Math.floor(Math.random()*glyphs.length)];
+    const left = Math.random()*100;
+    const duration = 14 + Math.random()*14;
+    const delay = -Math.random()*duration;
+    const size = 14 + Math.random()*14;
+    const drift = (Math.random()*120 - 60) + 'px';
+    s.style.left = left + 'vw';
+    s.style.fontSize = size + 'px';
+    s.style.setProperty('--drift', drift);
+    s.style.animationDuration = duration + 's';
+    s.style.animationDelay = delay + 's';
+    wrap.appendChild(s);
+  }
+})();
+
+function renderInvite(CONFIG){
+  setText('eyebrow-name', (CONFIG.inviteEmoji ? CONFIG.inviteEmoji + " " : "") + "Para " + CONFIG.guestName);
+  setText('gate-headline', CONFIG.gateHeadline);
+  setText('gate-sub', CONFIG.gateSub);
+  setText('guest-name-inline', CONFIG.guestName);
+  setText('invite-message', CONFIG.message);
+  setText('detail-date', CONFIG.eventDateLabel);
+  setText('detail-time', CONFIG.eventTime);
+  setText('host-name-footer', CONFIG.hostName);
+  setText('btn-yes', CONFIG.btnYesLabel);
+  setText('btn-maybe', CONFIG.btnMaybeLabel);
+
+  // local: texto simples, ou link clicável se houver eventLocationLink
+  (function renderLocation(){
+    const old = document.getElementById('detail-location');
+    if (!old) return;
+    if (CONFIG.eventLocationLink) {
+      const a = document.createElement('a');
+      a.id = 'detail-location';
+      a.className = 'value';
+      a.href = CONFIG.eventLocationLink;
+      a.target = '_blank';
+      a.rel = 'noopener';
+      a.textContent = CONFIG.eventLocation + ' ↗';
+      old.replaceWith(a);
+    } else {
+      old.textContent = CONFIG.eventLocation;
+    }
+  })();
+
+  document.getElementById('btn-open').addEventListener('click', function(){ goTo(2); });
+  document.getElementById('btn-continue').addEventListener('click', function(){ goTo(3); });
+
+  // botão "agora não" foge do cursor algumas vezes antes de aceitar o clique
+  (function dodgeButton(){
+    const wrap = document.getElementById('dodge-wrap');
+    const btn = document.getElementById('btn-decline');
+    const msg = document.getElementById('decline-msg');
+    let dodges = 0;
+    const MAX_DODGES = 4;
+
+    btn.addEventListener('mouseenter', function(){
+      if (dodges >= MAX_DODGES) return;
+      dodges++;
+      const x = (Math.random()*160 - 80).toFixed(0);
+      const y = (Math.random()*40 - 20).toFixed(0);
+      wrap.style.transform = 'translate(' + x + 'px,' + y + 'px)';
+    });
+
+    btn.addEventListener('click', function(){
+      msg.style.opacity = 1;
+    });
+  })();
+
+  // --- contagem regressiva (construída via DOM, sem innerHTML) ---
+  (function countdown(){
+    const el = document.getElementById('countdown');
+    const target = new Date(CONFIG.eventDateISO).getTime();
+
+    function clear(el){ while (el.firstChild) el.removeChild(el.firstChild); }
+
+    function box(num, label){
+      const d = document.createElement('div');
+      d.className = 'cd-box';
+      const n = document.createElement('span');
+      n.className = 'cd-num';
+      n.textContent = num;
+      const l = document.createElement('span');
+      l.className = 'cd-label';
+      l.textContent = label;
+      d.appendChild(n);
+      d.appendChild(l);
+      return d;
+    }
+
+    function render(){
+      const now = Date.now();
+      const diff = target - now;
+      clear(el);
+
+      if (diff <= 0){
+        const today = document.createElement('div');
+        today.className = 'cd-today';
+        today.textContent = 'é hoje ✨🎉';
+        el.appendChild(today);
+        return;
+      }
+
+      const d = Math.floor(diff / 86400000);
+      const h = Math.floor((diff % 86400000) / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+      const pad = function(n){ return String(n).padStart(2,'0'); };
+
+      el.appendChild(box(d, 'dias'));
+      el.appendChild(box(pad(h), 'horas'));
+      el.appendChild(box(pad(m), 'min'));
+      el.appendChild(box(pad(s), 'seg'));
+    }
+
+    render();
+    setInterval(render, 1000);
+  })();
+
+  // --- RSVP ---
+  (function rsvp(){
+    const yes = document.getElementById('btn-yes');
+    const maybe = document.getElementById('btn-maybe');
+    const response = document.getElementById('rsvp-response');
+
+    function waLink(text){
+      return 'https://wa.me/' + CONFIG.whatsappNumber + '?text=' + encodeURIComponent(text.replace('{host}', CONFIG.hostName));
+    }
+
+    yes.addEventListener('click', function(){
+      yes.classList.add('chosen');
+      maybe.disabled = true;
+      response.textContent = CONFIG.rsvpYesMessage;
+      response.classList.add('show');
+      if (CONFIG.whatsappNumber){
+        window.open(waLink(CONFIG.waMessageYes), '_blank', 'noopener');
+      }
+    });
+
+    maybe.addEventListener('click', function(){
+      maybe.classList.add('chosen');
+      yes.disabled = true;
+      response.textContent = CONFIG.rsvpMaybeMessage;
+      response.classList.add('show');
+      if (CONFIG.whatsappNumber){
+        window.open(waLink(CONFIG.waMessageMaybe), '_blank', 'noopener');
+      }
+    });
+  })();
+
+  goTo(1);
+}
+
+/* ============================================================
+   Carregamento: lê ?g=<id> da URL, busca o Gist na API pública
+   do GitHub (sem precisar de login pra LER um gist secreto, já
+   que quem tem o link/ID consegue ler — é a mesma lógica de um
+   vídeo "não listado"), valida o conteúdo e desenha o convite.
+============================================================ */
+(function boot(){
+  const params = new URLSearchParams(window.location.search);
+  const gistId = params.get('g');
+
+  if (!gistId){
+    showError('Esse link não tem os dados do convite (faltou o "?g=" na URL). Peça um link novo pra quem te chamou.');
+    return;
+  }
+
+  const FILE_NAME = 'o-date-config.json';
+
+  fetch('https://api.github.com/gists/' + encodeURIComponent(gistId), {
+    headers: { 'Accept': 'application/vnd.github+json' }
+  })
+    .then(function(res){
+      if (!res.ok){
+        throw new Error('status ' + res.status);
+      }
+      return res.json();
+    })
+    .then(function(gist){
+      const file = gist.files && gist.files[FILE_NAME];
+      if (!file || !file.content){
+        throw new Error('arquivo de configuração não encontrado no gist');
+      }
+      let CONFIG;
+      try {
+        CONFIG = JSON.parse(file.content);
+      } catch (e) {
+        throw new Error('conteúdo do gist não é um JSON válido');
+      }
+      if (!CONFIG || typeof CONFIG !== 'object'){
+        throw new Error('conteúdo do gist vazio');
+      }
+      renderInvite(CONFIG);
+    })
+    .catch(function(err){
+      console.error('O DATE — falha ao carregar o convite:', err);
+      showError('Não consegui buscar os dados desse convite agora. Se você acabou de gerar o link, espere alguns segundos e recarregue a página.');
+    });
+})();
+</script>
+</body>
+</html>
