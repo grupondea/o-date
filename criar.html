@@ -66,6 +66,11 @@
   }
   label{ display:block; font-size:.82rem; color: rgba(255,246,239,.75); margin-bottom: 14px; }
   label span.req{ color: var(--rose-soft); }
+  /* sem isso, o atributo "hidden" não funciona em <label> nem em .ai-actions, porque as regras
+     acima (display:block / display:flex) do CSS do autor vencem a regra padrão do navegador
+     pro atributo hidden — foi por causa disso que o campo do segundo nome ficava visível
+     mesmo no modo "1 pessoa" */
+  [hidden]{ display:none !important; }
   input, textarea{
     display:block; width:100%; margin-top:6px;
     font-family: var(--font-body); font-size: .95rem;
