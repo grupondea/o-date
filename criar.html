@@ -326,6 +326,13 @@
       </fieldset>
 
       <fieldset>
+        <legend>Trilha sonora <em>(opcional)</em></legend>
+        <label>Link de uma playlist ou música <em>(Spotify, YouTube, o que quiser)</em>
+          <input id="f-playlistLink" placeholder="https://open.spotify.com/... ou https://youtube.com/...">
+        </label>
+      </fieldset>
+
+      <fieldset>
         <legend>Resposta (RSVP)</legend>
         <label>Texto do botão "sim"
           <input id="f-btnYesLabel" placeholder="Bora, eu vou 🔥">
@@ -428,6 +435,22 @@ const TEMPLATE = `<!DOCTYPE html>
     --ease: cubic-bezier(.16,1,.3,1);
   }
 
+  /* tema exclusivo de convites pra 2 pessoas — vermelho com preto, em degradê.
+     o convite pra 1 pessoa nunca ganha essa classe, então continua na paleta original. */
+  body.theme-dupla{
+    --bg-1:#050000;
+    --bg-2:#1a0000;
+    --bg-3:#4d0000;
+    --bg-4:#b30000;
+    --rose:#ff1a1a;
+    --rose-soft:#ff3b3b;
+    --blush:#ff9999;
+    --gold:#8f0000;
+    --gold-soft:#ff5555;
+    --cream:#fff2f2;
+    --ink:#1a0000;
+  }
+
   *{ box-sizing:border-box; }
   html,body{ height:100%; }
   body{
@@ -443,6 +466,13 @@ const TEMPLATE = `<!DOCTYPE html>
     background-attachment: fixed;
     overflow-x: hidden;
     position: relative;
+  }
+  body.theme-dupla{
+    background:
+      radial-gradient(60% 50% at 15% 10%, rgba(255,26,26,.3), transparent 60%),
+      radial-gradient(55% 45% at 85% 15%, rgba(179,0,0,.22), transparent 60%),
+      radial-gradient(70% 60% at 50% 100%, rgba(77,0,0,.55), transparent 60%),
+      linear-gradient(160deg, var(--bg-1), var(--bg-2) 45%, var(--bg-3) 85%);
   }
 
   /* textura sutil de grão, pra não ficar "chapado" */
@@ -525,6 +555,8 @@ const TEMPLATE = `<!DOCTYPE html>
     box-shadow: 0 12px 30px rgba(255,77,28,.4);
   }
   .btn-primary:hover{ transform: translateY(-3px); box-shadow: 0 16px 40px rgba(255,77,28,.55); }
+  body.theme-dupla .btn-primary{ box-shadow: 0 12px 30px rgba(255,26,26,.45); }
+  body.theme-dupla .btn-primary:hover{ box-shadow: 0 16px 40px rgba(255,26,26,.6); }
   .btn-ghost{
     color: var(--cream);
     background: var(--glass);
@@ -586,6 +618,7 @@ const TEMPLATE = `<!DOCTYPE html>
     box-shadow: 0 0 16px rgba(255,182,72,.5);
     transition: opacity .4s;
   }
+  body.theme-dupla .env-seal{ box-shadow: 0 0 16px rgba(255,60,60,.55); }
   .env-heart{
     position:absolute; left:50%; top: 60%;
     transform: translate(-50%,-40%) scale(.25) rotate(0deg);
@@ -595,6 +628,7 @@ const TEMPLATE = `<!DOCTYPE html>
     transition: transform 1s cubic-bezier(.2,1.8,.3,1) .35s, opacity .5s ease .35s;
     pointer-events:none;
   }
+  body.theme-dupla .env-heart{ filter: drop-shadow(0 8px 16px rgba(255,26,26,.55)); }
   .envelope-scene.open .env-flap{ transform: rotateX(150deg); }
   .envelope-scene.open .env-seal{ opacity:0; }
   .envelope-scene.open .env-heart{
@@ -809,6 +843,11 @@ const TEMPLATE = `<!DOCTYPE html>
         </div>
       </div>
 
+      <div class="card" id="playlist-card" style="display:none;">
+        <h2 id="playlist-title">🎵 Trilha do encontro</h2>
+        <a id="playlist-link" href="#" target="_blank" rel="noopener" class="btn btn-ghost" style="width:100%;">Ouvir playlist ↗</a>
+      </div>
+
       <div class="card" id="after-card" style="display:none;">
         <h2>Depois do encontro 🎲</h2>
         <p id="after-location" style="margin:0 0 6px;"></p>
@@ -875,6 +914,9 @@ const CONFIG = {
   afterLocationLink: "%%AFTER_LOCATION_LINK%%",
   afterNote: "%%AFTER_NOTE%%",
 
+  // opcional: link de uma playlist ou música (Spotify, YouTube, o que for)
+  playlistLink: "%%PLAYLIST_LINK%%",
+
   // opcional: se preencher, o RSVP abre o WhatsApp com a resposta pronta
   // formato: código do país + DDD + número, só números. Ex: "5551999999999"
   whatsappNumber: "%%WHATSAPP_NUMBER%%",
@@ -919,6 +961,9 @@ function guestDisplayName(CONFIG){
   return CONFIG.guestName;
 }
 
+// tema vermelho/preto só entra em convites pra 2 pessoas — o de 1 pessoa fica igual sempre
+document.body.classList.toggle('theme-dupla', CONFIG.guestMode === 'dupla');
+
 setText('eyebrow-name', (CONFIG.inviteEmoji ? CONFIG.inviteEmoji + " " : "") + "Para " + guestDisplayName(CONFIG));
 setText('gate-headline', CONFIG.gateHeadline);
 setText('gate-sub', CONFIG.gateSub);
@@ -947,6 +992,18 @@ setText('rsvp-title', CONFIG.guestMode === 'dupla' ? 'Vai ter lugar guardado com
   } else {
     old.textContent = CONFIG.eventLocation;
   }
+})();
+
+// trilha sonora — link pronto pra Spotify, YouTube ou qualquer link de música
+(function renderPlaylist(){
+  const card = document.getElementById('playlist-card');
+  if (!card) return;
+  if (!CONFIG.playlistLink){ card.style.display = 'none'; return; }
+  card.style.display = '';
+  const link = document.getElementById('playlist-link');
+  link.href = CONFIG.playlistLink;
+  const icon = /spotify\.com/i.test(CONFIG.playlistLink) ? '🎧' : (/youtu\.?be/i.test(CONFIG.playlistLink) ? '▶️' : '🎵');
+  setText('playlist-title', icon + ' Trilha do encontro');
 })();
 
 // "depois do encontro" — só aparece em convite pra 2 pessoas com esse campo preenchido
@@ -1198,6 +1255,7 @@ const DEFAULTS = {
   afterLocation: "",
   afterLocationLink: "",
   afterNote: "",
+  playlistLink: "",
   whatsappNumber: "",
   btnYesLabel: "Bora, eu vou 🔥",
   btnMaybeLabel: "Deixa eu pensar 😅",
@@ -1289,6 +1347,7 @@ function getValues(){
     afterLocation: val('f-afterLocation'),
     afterLocationLink: val('f-afterLocationLink'),
     afterNote: val('f-afterNote'),
+    playlistLink: val('f-playlistLink'),
     whatsappNumber: val('f-whatsappNumber').replace(/\D/g, ''),
     btnYesLabel: val('f-btnYesLabel') || DEFAULTS.btnYesLabel,
     btnMaybeLabel: val('f-btnMaybeLabel') || DEFAULTS.btnMaybeLabel,
@@ -1327,6 +1386,7 @@ function buildHTML(v){
     '%%AFTER_LOCATION%%': v.afterLocation,
     '%%AFTER_LOCATION_LINK%%': v.afterLocationLink,
     '%%AFTER_NOTE%%': v.afterNote,
+    '%%PLAYLIST_LINK%%': v.playlistLink,
     '%%WHATSAPP_NUMBER%%': v.whatsappNumber,
     '%%BTN_YES_LABEL%%': v.btnYesLabel,
     '%%BTN_MAYBE_LABEL%%': v.btnMaybeLabel,
