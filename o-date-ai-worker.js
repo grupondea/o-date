@@ -2,17 +2,22 @@
    O DATE — Worker "o-date-ai"
    Gera as respostas do app "Responda o Stories" direto no site,
    sem precisar sair pra outro lugar. Este Worker é o único lugar
-   que conhece a chave da API da Claude (secret ANTHROPIC_API_KEY)
+   que conhece a chave da API do Gemini (secret GEMINI_API_KEY)
    — o navegador da pessoa nunca vê essa chave.
 
-   Deploy: dash.cloudflare.com → Workers & Pages → criar Worker
-   novo chamado "o-date-ai" → colar este código no editor → Deploy.
+   Usa a API do Google Gemini (gemini-3.5-flash) porque tem cota
+   gratuita real pra visão (imagem + texto), sem precisar de
+   cartão de crédito nem billing ativado.
+
+   Deploy: dash.cloudflare.com → Workers & Pages → o-date-ai →
+   conectado ao repositório do GitHub, builda sozinho a cada push.
    Depois: Settings → Variables and secrets → adicionar o secret
-   ANTHROPIC_API_KEY com uma chave gerada em console.anthropic.com
-   (precisa ter billing ativado na conta da Anthropic).
+   GEMINI_API_KEY com uma chave gerada de graça em
+   aistudio.google.com/app/apikey (clique em "Create API key",
+   não precisa cartão nem verificação de pagamento).
 
    A imagem enviada por quem usa o app passa só por aqui, de forma
-   temporária, só pra ir pra API da Claude e voltar com a resposta
+   temporária, só pra ir pra API do Gemini e voltar com a resposta
    — este Worker não salva nem loga a imagem em lugar nenhum.
 ============================================================ */
 
@@ -22,8 +27,8 @@ const ALLOWED_ORIGINS = [
   'http://127.0.0.1:8000'
 ];
 
-const MODEL = 'claude-sonnet-5';
-const MAX_TOKENS = 1400;
+const MODEL = 'gemini-3.5-flash';
+const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/' + MODEL + ':generateContent';
 
 const SITUACOES = {
   'conversa-parada': {
@@ -120,59 +125,61 @@ async function handleGenerate(request, env, origin){
     return jsonResponse({ error: 'Imagem grande demais. Tenta uma captura de tela menor.' }, 400, origin);
   }
 
-  if (!env.ANTHROPIC_API_KEY){
-    return jsonResponse({ error: 'A chave da IA ainda não foi configurada neste Worker (ANTHROPIC_API_KEY).' }, 500, origin);
+  const apiKey = (env.GEMINI_API_KEY || '').trim();
+  if (!apiKey){
+    return jsonResponse({ error: 'A chave da IA ainda não foi configurada neste Worker (GEMINI_API_KEY).' }, 500, origin);
   }
 
   const promptText = buildPrompt(situacao, contexto);
 
-  const anthropicPayload = {
-    model: MODEL,
-    max_tokens: MAX_TOKENS,
-    messages: [
+  const geminiPayload = {
+    contents: [
       {
         role: 'user',
-        content: [
-          {
-            type: 'image',
-            source: { type: 'base64', media_type: mimeType, data: imageBase64 }
-          },
-          { type: 'text', text: promptText }
+        parts: [
+          { inline_data: { mime_type: mimeType, data: imageBase64 } },
+          { text: promptText }
         ]
       }
-    ]
+    ],
+    generationConfig: {
+      maxOutputTokens: 1400,
+      temperature: 0.9
+    }
   };
 
-  let anthropicRes;
+  let geminiRes;
   try {
-    anthropicRes = await fetch('https://api.anthropic.com/v1/messages', {
+    geminiRes = await fetch(GEMINI_URL, {
       method: 'POST',
       headers: {
-        'x-api-key': env.ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01',
+        'x-goog-api-key': apiKey,
         'content-type': 'application/json'
       },
-      body: JSON.stringify(anthropicPayload)
+      body: JSON.stringify(geminiPayload)
     });
   } catch (e) {
-    console.error('Falha no fetch pra Anthropic:', e && e.stack ? e.stack : (e && e.message ? e.message : String(e)));
-    return jsonResponse({ error: 'Não consegui falar com a API da Claude agora. Tenta de novo em instantes.', debug: e && e.message ? e.message : String(e) }, 502, origin);
+    console.error('Falha no fetch pro Gemini:', e && e.stack ? e.stack : (e && e.message ? e.message : String(e)));
+    return jsonResponse({ error: 'Não consegui falar com a API da IA agora. Tenta de novo em instantes.' }, 502, origin);
   }
 
-  if (!anthropicRes.ok){
-    const errText = await anthropicRes.text().catch(function(){ return ''; });
-    return jsonResponse({ error: 'A API da Claude recusou a requisição (status ' + anthropicRes.status + ').', detail: errText.slice(0, 300) }, 502, origin);
+  if (!geminiRes.ok){
+    const errText = await geminiRes.text().catch(function(){ return ''; });
+    return jsonResponse({ error: 'A API da IA recusou a requisição (status ' + geminiRes.status + ').', detail: errText.slice(0, 300) }, 502, origin);
   }
 
-  const anthropicJson = await anthropicRes.json();
-  const textBlock = (anthropicJson.content || []).find(function(b){ return b.type === 'text'; });
-  if (!textBlock){
+  const geminiJson = await geminiRes.json();
+  const candidate = (geminiJson.candidates || [])[0];
+  const parts = candidate && candidate.content && candidate.content.parts ? candidate.content.parts : [];
+  const textPart = parts.find(function(p){ return typeof p.text === 'string' && p.text.trim().length > 0; });
+
+  if (!textPart){
     return jsonResponse({ error: 'A IA não devolveu texto nenhum.' }, 502, origin);
   }
 
   let replies;
   try {
-    replies = extractJsonArray(textBlock.text);
+    replies = extractJsonArray(textPart.text);
   } catch (e) {
     return jsonResponse({ error: 'Não consegui interpretar a resposta da IA. Tenta de novo.' }, 502, origin);
   }
