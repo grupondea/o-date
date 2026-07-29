@@ -152,16 +152,16 @@
   /* --- envelope : abertura animada, primeira impressão do stage 1 --- */
   .envelope-scene{
     position: relative;
-    width: 190px;
-    height: 176px;
-    margin: 0 auto 6px;
-    perspective: 900px;
+    width: min(300px, 74vw);
+    height: min(270px, 46vh);
+    margin: 0 auto 14px;
+    perspective: 1000px;
   }
   .envelope{
     position: absolute;
     left:0; right:0; bottom: 0;
     width: 100%;
-    height: 122px;
+    height: 68%;
     transform-style: preserve-3d;
   }
   .env-back{
@@ -346,13 +346,13 @@
     </div>
   </section>
 
-  <!-- ===================== STAGE 1 — Portal / gate ===================== -->
-  <section class="screen" data-screen="1">
+  <!-- ===================== STAGE ENVELOPE — abertura, primeira impressão ===================== -->
+  <section class="screen" data-screen="envelope">
     <div class="screen-inner">
       <div class="envelope-scene" id="envelope-scene" aria-hidden="true">
         <div class="env-burst" id="env-burst"></div>
         <div class="env-heart" id="env-heart">
-          <svg viewBox="0 0 32 29" width="48" height="43" xmlns="http://www.w3.org/2000/svg">
+          <svg viewBox="0 0 32 29" width="60" height="54" xmlns="http://www.w3.org/2000/svg">
             <defs>
               <linearGradient id="heartGrad" x1="0" y1="0" x2="1" y2="1">
                 <stop offset="0%" style="stop-color:var(--gold-soft)"/>
@@ -369,16 +369,32 @@
           <div class="env-back"></div>
         </div>
       </div>
-      <span class="eyebrow gate-reveal d1"><span class="dot"></span> <span id="eyebrow-name">Para você</span></span>
-      <h1 class="display gate-reveal d2" id="gate-headline">Não vim com joguinho. Vim com date marcado.</h1>
-      <p class="lede gate-reveal d3" id="gate-sub">Isso aqui não é bem um convite qualquer. É a sua próxima boa decisão.</p>
+      <h1 class="display gate-reveal d2">Você recebeu um convite.</h1>
+      <p class="lede gate-reveal d3">Quer matar essa curiosidade? 👀</p>
       <div class="btn-row gate-reveal d4">
+        <button class="btn btn-primary" id="btn-envelope-yes">Quero ver ✦</button>
+        <span id="dodge-wrap-env">
+          <button class="btn btn-ghost" id="btn-envelope-no">Depois eu vejo</button>
+        </span>
+      </div>
+      <p class="hint gate-reveal d5">(esse botão aí foge um pouco, já aviso 😏)</p>
+      <p id="decline-msg-env" class="hint" style="opacity:0; transition:opacity .4s;">foge não, quando quiser é só voltar aqui 😏</p>
+    </div>
+  </section>
+
+  <!-- ===================== STAGE 1 — Portal / gate ===================== -->
+  <section class="screen" data-screen="1">
+    <div class="screen-inner">
+      <span class="eyebrow"><span class="dot"></span> <span id="eyebrow-name">Para você</span></span>
+      <h1 class="display" id="gate-headline">Não vim com joguinho. Vim com date marcado.</h1>
+      <p class="lede" id="gate-sub">Isso aqui não é bem um convite qualquer. É a sua próxima boa decisão.</p>
+      <div class="btn-row">
         <button class="btn btn-primary" id="btn-open">Bora ✦</button>
         <span id="dodge-wrap">
           <button class="btn btn-ghost" id="btn-decline">Depois eu vejo</button>
         </span>
       </div>
-      <p class="hint gate-reveal d5">(esse botão aí foge um pouco, já aviso 😏)</p>
+      <p class="hint">(esse botão aí foge um pouco, já aviso 😏)</p>
       <p id="decline-msg" class="hint" style="opacity:0; transition:opacity .4s;">foge não, quando quiser é só voltar aqui 😏</p>
     </div>
   </section>
@@ -557,14 +573,16 @@ function renderInvite(CONFIG){
     }, 900);
   })();
 
+  document.getElementById('btn-envelope-yes').addEventListener('click', function(){ goTo(1); });
   document.getElementById('btn-open').addEventListener('click', function(){ goTo(2); });
   document.getElementById('btn-continue').addEventListener('click', function(){ goTo(3); });
 
-  // botão "agora não" foge do cursor algumas vezes antes de aceitar o clique
-  (function dodgeButton(){
-    const wrap = document.getElementById('dodge-wrap');
-    const btn = document.getElementById('btn-decline');
-    const msg = document.getElementById('decline-msg');
+  // botão "agora não" foge do cursor algumas vezes antes de aceitar o clique (reaproveitado em cada etapa)
+  function setupDodge(wrapId, btnId, msgId){
+    const wrap = document.getElementById(wrapId);
+    const btn = document.getElementById(btnId);
+    const msg = document.getElementById(msgId);
+    if (!wrap || !btn || !msg) return;
     let dodges = 0;
     const MAX_DODGES = 4;
 
@@ -579,7 +597,9 @@ function renderInvite(CONFIG){
     btn.addEventListener('click', function(){
       msg.style.opacity = 1;
     });
-  })();
+  }
+  setupDodge('dodge-wrap-env', 'btn-envelope-no', 'decline-msg-env');
+  setupDodge('dodge-wrap', 'btn-decline', 'decline-msg');
 
   // --- contagem regressiva (construída via DOM, sem innerHTML) ---
   (function countdown(){
@@ -692,7 +712,7 @@ function renderInvite(CONFIG){
     });
   })();
 
-  goTo(1);
+  goTo('envelope');
 }
 
 /* ============================================================
