@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>O DATE — Central</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  /* ============================================================
+     O DATE — CENTRAL (página inicial com os "apps" da ferramenta)
+     Cada quadrado leva pra um app diferente. Dá pra escolher quais
+     quadrados aparecem através da engrenagem no canto superior —
+     a escolha fica guardada só neste navegador (localStorage).
+  ============================================================ */
+  :root{
+    --bg-1:#1a0603; --bg-2:#2b0a03;
+    --rose:#ff4d1c; --rose-soft:#ff7a45; --blush:#ffc9a8;
+    --gold:#ffb648; --gold-soft:#ffd27a; --cream:#fff6ef; --ink:#2a0900;
+    --glass: rgba(255,255,255,.05); --glass-strong: rgba(255,255,255,.1);
+    --border: rgba(255,255,255,.14);
+    --font-display:'Fraunces', serif; --font-body:'Manrope', sans-serif;
+    --ease: cubic-bezier(.16,1,.3,1);
+  }
+  *{ box-sizing:border-box; }
+  html,body{ height:100%; margin:0; }
+  body{
+    font-family: var(--font-body); color: var(--cream);
+    background:
+      radial-gradient(60% 50% at 15% 10%, rgba(255,77,28,.25), transparent 60%),
+      radial-gradient(55% 45% at 85% 15%, rgba(255,182,72,.16), transparent 60%),
+      linear-gradient(165deg, var(--bg-1), var(--bg-2));
+    min-height:100vh;
+    display:flex; align-items:center; justify-content:center;
+    padding: 8vh 6vw;
+    position: relative;
+  }
+  button{ font-family: var(--font-body); cursor:pointer; border:none; }
+
+  .wrap{ width:100%; max-width: 720px; text-align:center; position:relative; }
+
+  .wordmark{
+    font-family: var(--font-display); font-style:italic; font-weight:600;
+    font-size: clamp(2.2rem, 6vw, 3.2rem); margin: 0 0 6px;
+    background: linear-gradient(100deg, var(--gold-soft), var(--rose-soft));
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  .tagline{ font-size:.98rem; color: rgba(255,246,239,.65); margin: 0 0 40px; }
+
+  .app-grid{
+    display:grid; grid-template-columns: repeat(2, 1fr); gap:18px;
+  }
+  @media (max-width:560px){ .app-grid{ grid-template-columns: 1fr; } }
+
+  .app-card{
+    display:block; text-decoration:none; text-align:left;
+    background: var(--glass); border:1px solid var(--border);
+    border-radius:22px; padding: 26px 24px;
+    color: var(--cream);
+    transition: transform .25s var(--ease), border-color .25s, background .25s, box-shadow .25s;
+    aspect-ratio: 1 / 0.82;
+    display:flex; flex-direction:column; justify-content:space-between;
+  }
+  .app-card:hover{
+    transform: translateY(-4px);
+    border-color: var(--gold-soft);
+    background: rgba(255,182,72,.08);
+    box-shadow: 0 16px 40px rgba(255,77,28,.25);
+  }
+  .app-card .icon{ font-size:2.1rem; line-height:1; }
+  .app-card h2{
+    font-family: var(--font-display); font-style:italic; font-weight:600;
+    font-size: 1.25rem; margin: 14px 0 6px; color: var(--cream);
+  }
+  .app-card p{
+    margin:0; font-size:.84rem; line-height:1.5; color: rgba(255,246,239,.68);
+  }
+  .app-card .go{
+    margin-top:14px; font-size:.74rem; font-weight:700; letter-spacing:.06em;
+    text-transform:uppercase; color: var(--gold-soft);
+  }
+
+  .app-card.soon{
+    cursor:default; opacity:.5; filter: grayscale(.4);
+  }
+  .app-card.soon:hover{ transform:none; border-color: var(--border); background: var(--glass); box-shadow:none; }
+  .app-card.soon .go{ color: rgba(255,246,239,.45); }
+
+  .app-card[hidden]{ display:none; }
+
+  /* --- engrenagem + painel de configuração --- */
+  .gear-btn{
+    position:absolute; top:-52px; right:0;
+    width:40px; height:40px; border-radius:50%;
+    background: var(--glass); border:1px solid var(--border);
+    color: var(--cream); font-size:1.1rem;
+    display:flex; align-items:center; justify-content:center;
+    transition: background .2s, transform .3s;
+  }
+  .gear-btn:hover{ background: var(--glass-strong); }
+  .gear-btn.open{ transform: rotate(60deg); }
+
+  .settings-panel{
+    position:absolute; top:-4px; right:0; z-index: 20;
+    width: min(280px, 84vw);
+    background: #22090a; border:1px solid var(--border); border-radius:18px;
+    padding: 18px 18px 8px;
+    box-shadow: 0 20px 50px rgba(0,0,0,.5);
+    text-align:left;
+    opacity:0; transform: translateY(-8px); pointer-events:none;
+    transition: opacity .2s var(--ease), transform .2s var(--ease);
+  }
+  .settings-panel.open{ opacity:1; transform: translateY(0); pointer-events:auto; }
+  .settings-panel h3{
+    font-family: var(--font-display); font-style:italic; font-weight:500;
+    font-size:1rem; margin:0 0 12px; color: var(--blush);
+  }
+  .settings-panel label{
+    display:flex; align-items:center; gap:10px;
+    font-size:.85rem; margin-bottom: 14px; cursor:pointer;
+  }
+  .settings-panel input[type="checkbox"]{ width:16px; height:16px; accent-color: var(--gold-soft); }
+  .settings-hint{ font-size:.72rem; color: rgba(255,246,239,.45); margin: 0 0 14px; line-height:1.4; }
+
+  footer.sig{
+    margin-top: 44px; font-size:.8rem; color: rgba(255,246,239,.5);
+  }
+  footer.sig b{ color: var(--blush); font-weight:700; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <button type="button" class="gear-btn" id="gear-btn" aria-label="Configurar quadrados">⚙️</button>
+  <div class="settings-panel" id="settings-panel">
+    <h3>O que aparece aqui</h3>
+    <p class="settings-hint">Escolha os quadrados que você quer ver. Fica salvo só neste navegador.</p>
+    <label><input type="checkbox" data-app="convite"> 💌 Criar convite</label>
+    <label><input type="checkbox" data-app="stories"> 📸 Responda o Stories</label>
+    <label><input type="checkbox" data-app="soon1"> ✦ Em breve</label>
+    <label><input type="checkbox" data-app="soon2"> ✦ Em breve</label>
+  </div>
+
+  <p class="wordmark">O DATE</p>
+  <p class="tagline">Escolha o que você quer fazer</p>
+
+  <div class="app-grid" id="app-grid">
+    <a class="app-card" data-app="convite" href="criar.html">
+      <span class="icon">💌</span>
+      <div>
+        <h2>Criar convite</h2>
+        <p>Monte o convite personalizado, com data, local e mensagem, e gere o link pra mandar.</p>
+      </div>
+      <span class="go">Abrir →</span>
+    </a>
+
+    <a class="app-card" data-app="stories" href="responder-stories.html">
+      <span class="icon">📸</span>
+      <div>
+        <h2>Responda o Stories</h2>
+        <p>Manda o print da conversa ou do stories e recebe uma mensagem pronta pra puxar assunto.</p>
+      </div>
+      <span class="go">Abrir →</span>
+    </a>
+
+    <div class="app-card soon" data-app="soon1">
+      <span class="icon">✦</span>
+      <div>
+        <h2>Em breve</h2>
+        <p>Mais um app chegando por aqui.</p>
+      </div>
+      <span class="go">Em breve</span>
+    </div>
+
+    <div class="app-card soon" data-app="soon2">
+      <span class="icon">✦</span>
+      <div>
+        <h2>Em breve</h2>
+        <p>Mais um app chegando por aqui.</p>
+      </div>
+      <span class="go">Em breve</span>
+    </div>
+  </div>
+
+  <footer class="sig">feito com 🔥 por <b>Ndea</b> · O DATE</footer>
+</div>
+
+<script>
+/* ============================================================
+   Escolha de quais quadrados aparecem — guardada no localStorage
+   deste navegador (chave "odate-hub-visible"). Por padrão os dois
+   apps prontos ficam visíveis e os "em breve" ficam escondidos.
+============================================================ */
+const STORAGE_KEY = 'odate-hub-visible';
+const DEFAULTS = { convite: true, stories: true, soon1: false, soon2: false };
+
+function loadConfig(){
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return Object.assign({}, DEFAULTS);
+    const parsed = JSON.parse(raw);
+    return Object.assign({}, DEFAULTS, parsed);
+  } catch (e) {
+    return Object.assign({}, DEFAULTS);
+  }
+}
+
+function saveConfig(cfg){
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(cfg)); } catch (e) {}
+}
+
+function applyConfig(cfg){
+  document.querySelectorAll('.app-card').forEach(function(card){
+    const app = card.dataset.app;
+    card.hidden = !cfg[app];
+  });
+  document.querySelectorAll('.settings-panel input[type="checkbox"]').forEach(function(cb){
+    cb.checked = !!cfg[cb.dataset.app];
+  });
+}
+
+let config = loadConfig();
+applyConfig(config);
+
+document.querySelectorAll('.settings-panel input[type="checkbox"]').forEach(function(cb){
+  cb.addEventListener('change', function(){
+    config[cb.dataset.app] = cb.checked;
+    saveConfig(config);
+    applyConfig(config);
+  });
+});
+
+const gearBtn = document.getElementById('gear-btn');
+const panel = document.getElementById('settings-panel');
+gearBtn.addEventListener('click', function(){
+  const open = panel.classList.toggle('open');
+  gearBtn.classList.toggle('open', open);
+});
+document.addEventListener('click', function(e){
+  if (!panel.classList.contains('open')) return;
+  if (panel.contains(e.target) || gearBtn.contains(e.target)) return;
+  panel.classList.remove('open');
+  gearBtn.classList.remove('open');
+});
+</script>
+</body>
+</html>

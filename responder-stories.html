@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>O DATE — Responda o Stories</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  /* ============================================================
+     O DATE — RESPONDA O STORIES
+     Você manda o print (stories, DM, o que for), a gente monta um
+     prompt pronto pra você colar no Claude JUNTO com a imagem
+     anexada por você. A imagem nunca sai do seu navegador — este
+     arquivo é só HTML local, não tem servidor nem upload nenhum.
+  ============================================================ */
+  :root{
+    --bg-1:#1a0603; --bg-2:#2b0a03; --panel:#220803;
+    --rose:#ff4d1c; --rose-soft:#ff7a45; --blush:#ffc9a8;
+    --gold:#ffb648; --gold-soft:#ffd27a; --cream:#fff6ef; --ink:#2a0900;
+    --glass: rgba(255,255,255,.05); --glass-strong: rgba(255,255,255,.09);
+    --border: rgba(255,255,255,.14);
+    --font-display:'Fraunces', serif; --font-body:'Manrope', sans-serif;
+    --ease: cubic-bezier(.16,1,.3,1);
+  }
+  *{ box-sizing:border-box; }
+  html,body{ height:100%; margin:0; }
+  body{
+    font-family: var(--font-body); color: var(--cream);
+    background: linear-gradient(165deg, var(--bg-1), var(--bg-2));
+    min-height:100vh;
+  }
+  header{
+    display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+    padding: 22px 28px; border-bottom: 1px solid var(--border);
+    position: sticky; top:0; z-index: 5;
+    background: rgba(23,12,26,.9); backdrop-filter: blur(10px);
+  }
+  header a.back{
+    color: rgba(255,246,239,.7); text-decoration:none; font-size:.85rem;
+    display:flex; align-items:center; gap:6px;
+  }
+  header a.back:hover{ color: var(--gold-soft); }
+  header h1{
+    font-family: var(--font-display); font-style:italic; font-weight:600;
+    font-size: 1.5rem; margin:0;
+    background: linear-gradient(100deg, var(--gold-soft), var(--rose-soft));
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  .badge{
+    font-size:.68rem; letter-spacing:.1em; text-transform:uppercase; font-weight:700;
+    color: var(--gold-soft); background: var(--glass); border:1px solid var(--border);
+    padding:6px 12px; border-radius:999px;
+  }
+
+  main{ max-width: 640px; margin: 0 auto; padding: 28px 24px 80px; }
+
+  .intro{ font-size:.88rem; color:rgba(255,246,239,.7); margin: 0 0 24px; line-height:1.6; }
+  .intro strong{ color: var(--blush); }
+
+  fieldset{
+    border:1px solid var(--border); border-radius:18px; padding: 18px 18px 6px;
+    margin: 0 0 18px; background: var(--glass);
+  }
+  legend{
+    font-family: var(--font-display); font-style: italic; font-weight:500;
+    font-size: 1.05rem; padding: 0 8px; color: var(--blush);
+  }
+  label{ display:block; font-size:.82rem; color: rgba(255,246,239,.75); margin-bottom: 14px; }
+  input, textarea{
+    display:block; width:100%; margin-top:6px;
+    font-family: var(--font-body); font-size: .95rem;
+    padding: 11px 13px; border-radius: 10px;
+    border: 1px solid var(--border);
+    background: rgba(255,246,239,.96); color: var(--ink);
+  }
+  input:focus, textarea:focus{ outline:2px solid var(--gold-soft); outline-offset:1px; }
+  textarea{ resize: vertical; min-height: 90px; font-family: var(--font-body); }
+
+  [hidden]{ display:none !important; }
+
+  /* --- upload de imagem --- */
+  .drop-zone{
+    border:1.5px dashed var(--border); border-radius:16px; padding: 26px 18px;
+    text-align:center; cursor:pointer; margin-top:6px;
+    transition: border-color .2s, background .2s;
+  }
+  .drop-zone:hover, .drop-zone.drag{ border-color: var(--gold-soft); background: rgba(255,182,72,.06); }
+  .drop-zone .hint{ font-size:.8rem; color: rgba(255,246,239,.55); margin-top:6px; }
+  .drop-zone .icon{ font-size:1.8rem; }
+  #file-input{ display:none; }
+
+  .preview-wrap{ margin-top:14px; text-align:center; }
+  #preview-img{
+    max-width:100%; max-height: 320px; border-radius:14px;
+    border:1px solid var(--border); box-shadow: 0 12px 30px rgba(0,0,0,.35);
+  }
+  .preview-actions{ margin-top:10px; }
+
+  .chips{ display:flex; gap:8px; flex-wrap:wrap; margin: 8px 0 16px; }
+  .chip{
+    background: rgba(255,255,255,.05); border:1px solid var(--border); border-radius:999px;
+    font-size:.82rem; padding:8px 14px; cursor:pointer; color: var(--cream);
+    font-family: var(--font-body); transition: border-color .2s, background .2s;
+  }
+  .chip:hover{ border-color: var(--rose-soft); }
+  .chip.selected{ border-color: var(--gold-soft); background: rgba(255,182,72,.14); color: var(--gold-soft); font-weight:700; }
+
+  .actions{ margin-top: 6px; }
+  button{ font-family: var(--font-body); cursor:pointer; border:none; }
+  .btn{
+    font-weight:700; font-size: .96rem; padding: 14px 26px; border-radius: 999px;
+    transition: transform .2s var(--ease), box-shadow .2s var(--ease); width:100%;
+  }
+  .btn-primary{
+    color: var(--ink);
+    background: linear-gradient(100deg, var(--gold-soft), var(--rose-soft));
+    box-shadow: 0 12px 28px rgba(255,77,28,.38);
+  }
+  .btn-primary:hover{ transform: translateY(-2px); }
+  .btn-primary[disabled]{ opacity:.5; cursor:default; transform:none; box-shadow:none; }
+  .btn-secondary{
+    width:auto; padding: 10px 18px; font-size:.85rem;
+    color: var(--cream); background: var(--glass-strong);
+    border:1px solid var(--border) !important;
+  }
+  .btn-secondary:hover{ background: rgba(255,255,255,.16); }
+  .btn-row{ display:flex; gap:10px; flex-wrap:wrap; margin: 4px 0 14px; }
+  .btn-row .btn-secondary{ flex:1; min-width:140px; }
+
+  #status-msg{ font-size:.85rem; color: var(--gold-soft); min-height: 20px; margin-top:10px; }
+  #status-msg.error-text{ color: var(--rose-soft); }
+
+  .result-card{
+    background: var(--glass-strong); border:1px solid var(--gold-soft); border-radius:18px;
+    padding: 20px; margin-top: 10px;
+  }
+  .result-card p{ margin:0; line-height:1.7; font-size:1rem; white-space:pre-wrap; }
+
+  code{ background: rgba(255,255,255,.08); padding:1px 5px; border-radius:4px; }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="back" href="central.html">← Central</a>
+  <h1>O DATE</h1>
+  <span class="badge">responda o stories</span>
+</header>
+
+<main>
+  <p class="intro">
+    Manda o <strong>print de uma conversa, story ou DM</strong>, escolhe o tom, e a gente monta um prompt pronto pra você colar no Claude
+    <strong>junto com a imagem anexada por você</strong>. A imagem fica só no seu navegador o tempo todo, nunca é enviada pra lugar nenhum daqui —
+    este arquivo é HTML local, sem servidor.
+  </p>
+
+  <fieldset>
+    <legend>1. O print</legend>
+    <div class="drop-zone" id="drop-zone">
+      <div class="icon">📸</div>
+      <div><strong>Clique aqui</strong> ou arraste a imagem</div>
+      <div class="hint">PNG, JPG ou qualquer print de tela</div>
+    </div>
+    <input type="file" id="file-input" accept="image/*">
+    <div class="preview-wrap" id="preview-wrap" hidden>
+      <img id="preview-img" alt="Pré-visualização do print">
+      <div class="preview-actions">
+        <button type="button" id="btn-remove-img" class="btn-secondary">Trocar imagem</button>
+      </div>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>2. Tom da resposta</legend>
+    <div class="chips" id="tone-chips">
+      <button type="button" class="chip selected" data-tone="paquera">😏 Paquera leve</button>
+      <button type="button" class="chip" data-tone="engracado">😂 Engraçado</button>
+      <button type="button" class="chip" data-tone="direto">🔥 Direto</button>
+      <button type="button" class="chip" data-tone="casual">👋 Só puxar papo</button>
+    </div>
+    <label>Contexto extra <em>(opcional — quem é essa pessoa, como se conhecem, algo que já rolou)</em>
+      <textarea id="f-context" rows="2" placeholder="Ex: é uma resposta de story dela sobre café, a gente já trocou ideia uma vez numa festa..."></textarea>
+    </label>
+  </fieldset>
+
+  <div class="actions">
+    <button type="button" id="btn-build" class="btn btn-primary" disabled>✨ Gerar prompt</button>
+  </div>
+  <p id="status-msg"></p>
+
+  <div id="prompt-section" hidden>
+    <fieldset>
+      <legend>3. Cole isso no Claude</legend>
+      <label>Prompt pronto — copie, abra o Claude, <strong>anexe o print</strong> e cole este texto junto
+        <textarea id="prompt-out" rows="9" readonly></textarea>
+      </label>
+      <div class="btn-row">
+        <button type="button" id="btn-copy-prompt" class="btn-secondary">Copiar prompt</button>
+        <button type="button" id="btn-open-claude" class="btn-secondary">Abrir Claude ↗</button>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>4. Cole a resposta aqui</legend>
+      <label>Resposta do Claude
+        <textarea id="paste-in" rows="4" placeholder="Cole aqui a mensagem que o Claude gerou..."></textarea>
+      </label>
+      <div class="actions">
+        <button type="button" id="btn-use" class="btn btn-primary">Usar esta mensagem ↓</button>
+      </div>
+    </fieldset>
+  </div>
+
+  <div class="result-card" id="result-card" hidden>
+    <p id="result-text"></p>
+    <div class="btn-row" style="margin-top:14px;">
+      <button type="button" id="btn-copy-result" class="btn-secondary">Copiar mensagem</button>
+    </div>
+  </div>
+</main>
+
+<script>
+/* ============================================================
+   Upload de imagem — fica só na memória do navegador (URL.createObjectURL),
+   nunca é enviada pra servidor nenhum. Serve só de referência visual
+   pra você lembrar de anexar o print certo quando abrir o Claude.
+============================================================ */
+const dropZone = document.getElementById('drop-zone');
+const fileInput = document.getElementById('file-input');
+const previewWrap = document.getElementById('preview-wrap');
+const previewImg = document.getElementById('preview-img');
+const removeBtn = document.getElementById('btn-remove-img');
+const buildBtn = document.getElementById('btn-build');
+
+let hasImage = false;
+
+function showImage(file){
+  if (!file || !file.type || file.type.indexOf('image/') !== 0) return;
+  const url = URL.createObjectURL(file);
+  previewImg.src = url;
+  previewWrap.hidden = false;
+  dropZone.hidden = true;
+  hasImage = true;
+  buildBtn.disabled = false;
+}
+
+function resetImage(){
+  previewImg.src = '';
+  previewWrap.hidden = true;
+  dropZone.hidden = false;
+  hasImage = false;
+  buildBtn.disabled = true;
+  fileInput.value = '';
+}
+
+dropZone.addEventListener('click', function(){ fileInput.click(); });
+fileInput.addEventListener('change', function(){
+  if (fileInput.files && fileInput.files[0]) showImage(fileInput.files[0]);
+});
+removeBtn.addEventListener('click', resetImage);
+
+['dragenter','dragover'].forEach(function(evt){
+  dropZone.addEventListener(evt, function(e){
+    e.preventDefault(); e.stopPropagation();
+    dropZone.classList.add('drag');
+  });
+});
+['dragleave','drop'].forEach(function(evt){
+  dropZone.addEventListener(evt, function(e){
+    e.preventDefault(); e.stopPropagation();
+    dropZone.classList.remove('drag');
+  });
+});
+dropZone.addEventListener('drop', function(e){
+  const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+  if (file) showImage(file);
+});
+
+/* ============================================================
+   Tom da resposta — chips de seleção única, igual ao padrão já
+   usado no gerador de convites.
+============================================================ */
+let selectedTone = 'paquera';
+const toneLabels = {
+  paquera: 'paquera leve, com charme, sem ser forçado nem vulgar',
+  engracado: 'engraçado, leve, que arranca um sorriso sem tentar demais',
+  direto: 'direto e confiante, sem rodeio, mas sem ser grosseiro',
+  casual: 'casual, tipo puxando papo com alguém que você já conhece um pouco, sem clima de paquera forçada'
+};
+document.getElementById('tone-chips').addEventListener('click', function(e){
+  const chip = e.target.closest('.chip');
+  if (!chip) return;
+  document.querySelectorAll('#tone-chips .chip').forEach(function(c){ c.classList.remove('selected'); });
+  chip.classList.add('selected');
+  selectedTone = chip.dataset.tone;
+});
+
+/* ============================================================
+   Monta o prompt — mesma lógica do gerador de mensagem do criar.html:
+   como este arquivo não pode chamar a IA sozinho sem expor uma chave
+   secreta, ele monta um prompt pronto (com as regras da skill
+   copy-humana) pra você colar no Claude junto com a imagem anexada.
+============================================================ */
+function buildPrompt(){
+  const context = document.getElementById('f-context').value.trim();
+  const toneDesc = toneLabels[selectedTone] || toneLabels.paquera;
+
+  const lines = [
+    'Anexei um print (conversa, story ou DM). Use a skill copy-humana pra escrever a resposta.',
+    '',
+    'Regras da skill copy-humana que valem pra este texto:',
+    '1. Escreva como gente escreve pra gente, nunca como manual corporativo.',
+    '2. Troque abstração por detalhe observável, e promessa vaga por algo concreto — reaja a algo específico que apareça na imagem.',
+    '3. Nunca use hífen nem travessão, nem os caracteres -, –, —, ‑, em lugar nenhum do texto. Se precisar separar ideia, use vírgula, dois pontos, ponto final ou quebra de linha.',
+    '4. Sem clichê de abertura tipo "e aí" sozinho ou "oi, tudo bem?" vazio, sem frase bonita e vazia, sem exagero.',
+    '5. No máximo 1 emoji no texto inteiro, ou zero.',
+    '',
+    'Tom desejado: ' + toneDesc + '.'
+  ];
+
+  if (context){
+    lines.push('', 'Contexto extra sobre essa pessoa ou essa conversa: ' + context);
+  }
+
+  lines.push(
+    '',
+    'Tarefa: olhando pro print anexado, escreva uma mensagem curta (1 a 3 frases) pra eu mandar como resposta ou como abertura de conversa, puxando algo real que está na imagem. Nada de mensagem genérica que serviria pra qualquer print.',
+    '',
+    'Responda só com o texto final da mensagem, pronto pra colar, sem explicação antes ou depois, sem aspas envolvendo o texto.'
+  );
+
+  return lines.join('\n');
+}
+
+const statusMsg = document.getElementById('status-msg');
+const promptSection = document.getElementById('prompt-section');
+const promptOut = document.getElementById('prompt-out');
+
+buildBtn.addEventListener('click', function(){
+  if (!hasImage){
+    statusMsg.textContent = 'Adiciona o print primeiro.';
+    statusMsg.classList.add('error-text');
+    return;
+  }
+  promptOut.value = buildPrompt();
+  promptSection.hidden = false;
+  statusMsg.textContent = 'Prompt pronto. Copia, abre o Claude, anexa o print e cola o texto junto.';
+  statusMsg.classList.remove('error-text');
+  promptSection.scrollIntoView({ behavior:'smooth', block:'start' });
+});
+
+document.getElementById('btn-copy-prompt').addEventListener('click', function(){
+  function ok(){
+    statusMsg.textContent = 'Prompt copiado! Agora abre o Claude e anexa o print junto.';
+    statusMsg.classList.remove('error-text');
+  }
+  function fail(){
+    promptOut.focus();
+    promptOut.select();
+    statusMsg.textContent = 'Não consegui copiar sozinho — selecionei o texto, use Ctrl/Cmd+C.';
+    statusMsg.classList.add('error-text');
+  }
+  if (navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(promptOut.value).then(ok, fail);
+  } else {
+    fail();
+  }
+});
+
+document.getElementById('btn-open-claude').addEventListener('click', function(){
+  window.open('https://claude.ai/new', '_blank', 'noopener');
+});
+
+const resultCard = document.getElementById('result-card');
+const resultText = document.getElementById('result-text');
+
+document.getElementById('btn-use').addEventListener('click', function(){
+  const text = document.getElementById('paste-in').value.trim();
+  if (!text){
+    statusMsg.textContent = 'Cole a resposta do Claude na caixa acima primeiro.';
+    statusMsg.classList.add('error-text');
+    return;
+  }
+  resultText.textContent = text;
+  resultCard.hidden = false;
+  statusMsg.textContent = 'Prontinho. Copia e manda.';
+  statusMsg.classList.remove('error-text');
+  resultCard.scrollIntoView({ behavior:'smooth', block:'start' });
+});
+
+document.getElementById('btn-copy-result').addEventListener('click', function(){
+  function ok(){
+    statusMsg.textContent = 'Mensagem copiada!';
+    statusMsg.classList.remove('error-text');
+  }
+  function fail(){
+    statusMsg.textContent = 'Não consegui copiar sozinho — selecione o texto acima manualmente.';
+    statusMsg.classList.add('error-text');
+  }
+  if (navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(resultText.textContent).then(ok, fail);
+  } else {
+    fail();
+  }
+});
+</script>
+</body>
+</html>
