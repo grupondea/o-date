@@ -149,6 +149,98 @@
 
   .hint{ margin-top:16px; font-size:.8rem; color: rgba(255,246,239,.5); }
 
+  /* --- envelope : abertura animada, primeira impressão do stage 1 --- */
+  .envelope-scene{
+    position: relative;
+    width: 190px;
+    height: 176px;
+    margin: 0 auto 6px;
+    perspective: 900px;
+  }
+  .envelope{
+    position: absolute;
+    left:0; right:0; bottom: 0;
+    width: 100%;
+    height: 122px;
+    transform-style: preserve-3d;
+  }
+  .env-back{
+    position:absolute; inset:0;
+    border-radius: 18px;
+    background: linear-gradient(155deg, var(--bg-3), var(--rose) 130%);
+    border: 1px solid rgba(255,255,255,.14);
+    box-shadow: 0 22px 46px rgba(20,4,16,.5);
+    z-index:1;
+  }
+  .env-pocket{
+    position:absolute; inset:0;
+    z-index:2;
+    border-radius: 0 0 18px 18px;
+    background: linear-gradient(200deg, var(--rose-soft), var(--bg-2));
+    clip-path: polygon(0 16%, 50% 70%, 100% 16%, 100% 100%, 0 100%);
+  }
+  .env-flap{
+    position:absolute; top:0; left:0;
+    width:100%; height: 62%;
+    transform-origin: top center;
+    clip-path: polygon(0 0, 100% 0, 50% 96%);
+    background: linear-gradient(200deg, var(--gold-soft), var(--rose-soft) 55%, var(--rose));
+    z-index:3;
+    backface-visibility: hidden;
+    box-shadow: 0 8px 20px rgba(0,0,0,.3);
+    display:flex; align-items:flex-start; justify-content:center; padding-top: 13px;
+    transition: transform 1.1s cubic-bezier(.3,1.4,.4,1);
+  }
+  .env-seal{
+    width:32px; height:32px; border-radius:50%;
+    background: var(--glass-strong); border:1px solid var(--border);
+    display:flex; align-items:center; justify-content:center;
+    color: var(--cream); font-size:.95rem;
+    box-shadow: 0 0 16px rgba(255,182,72,.5);
+    transition: opacity .4s;
+  }
+  .env-heart{
+    position:absolute; left:50%; top: 60%;
+    transform: translate(-50%,-40%) scale(.25) rotate(0deg);
+    opacity:0;
+    z-index:0;
+    filter: drop-shadow(0 8px 16px rgba(255,77,28,.5));
+    transition: transform 1s cubic-bezier(.2,1.8,.3,1) .35s, opacity .5s ease .35s;
+    pointer-events:none;
+  }
+  .envelope-scene.open .env-flap{ transform: rotateX(150deg); }
+  .envelope-scene.open .env-seal{ opacity:0; }
+  .envelope-scene.open .env-heart{
+    top: -8%;
+    transform: translate(-50%,-50%) scale(1) rotate(-8deg);
+    opacity:1;
+    z-index:4;
+  }
+  .envelope-scene.settled .env-heart{ animation: heartBob 2.6s ease-in-out infinite; }
+  @keyframes heartBob{
+    0%,100%{ transform: translate(-50%,-50%) scale(1) rotate(-8deg) translateY(0); }
+    50%{ transform: translate(-50%,-50%) scale(1) rotate(-4deg) translateY(-8px); }
+  }
+  .env-burst{ position:absolute; left:50%; top:42%; width:0; height:0; z-index:5; pointer-events:none; }
+  .env-burst span{
+    position:absolute; left:0; top:0; font-size: 13px; opacity:0;
+    transform: translate(0,0) scale(.4);
+  }
+  .envelope-scene.open .env-burst span{ animation: burstOut .9s ease-out forwards; }
+  @keyframes burstOut{
+    0%{ opacity:0; transform: translate(0,0) scale(.3) rotate(0deg); }
+    15%{ opacity:1; }
+    100%{ opacity:0; transform: translate(var(--bx), var(--by)) scale(1) rotate(180deg); }
+  }
+
+  .gate-reveal{ opacity:0; transform: translateY(16px); transition: opacity .6s var(--ease), transform .6s var(--ease); }
+  .gate-reveal.shown{ opacity:1; transform: translateY(0); }
+  .gate-reveal.d1{ transition-delay: .05s; }
+  .gate-reveal.d2{ transition-delay: .15s; }
+  .gate-reveal.d3{ transition-delay: .26s; }
+  .gate-reveal.d4{ transition-delay: .37s; }
+  .gate-reveal.d5{ transition-delay: .46s; }
+
   /* --- stage 2 : reveal / landing do "app" --- */
   .wordmark{
     font-family: var(--font-display); font-style: italic; font-weight:600;
@@ -257,16 +349,36 @@
   <!-- ===================== STAGE 1 — Portal / gate ===================== -->
   <section class="screen" data-screen="1">
     <div class="screen-inner">
-      <span class="eyebrow"><span class="dot"></span> <span id="eyebrow-name">Para você</span></span>
-      <h1 class="display" id="gate-headline">Não vim com joguinho. Vim com date marcado.</h1>
-      <p class="lede" id="gate-sub">Isso aqui não é bem um convite qualquer. É a sua próxima boa decisão.</p>
-      <div class="btn-row">
+      <div class="envelope-scene" id="envelope-scene" aria-hidden="true">
+        <div class="env-burst" id="env-burst"></div>
+        <div class="env-heart" id="env-heart">
+          <svg viewBox="0 0 32 29" width="48" height="43" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="heartGrad" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" style="stop-color:var(--gold-soft)"/>
+                <stop offset="60%" style="stop-color:var(--rose-soft)"/>
+                <stop offset="100%" style="stop-color:var(--rose)"/>
+              </linearGradient>
+            </defs>
+            <path d="M16 28.4C9 23 1 17.7 1 9.9 1 4.9 5 1 9.7 1c3 0 5.4 1.5 6.3 4 .9-2.5 3.3-4 6.3-4C27 1 31 4.9 31 9.9c0 7.8-8 13.1-15 18.5z" fill="url(#heartGrad)"/>
+          </svg>
+        </div>
+        <div class="envelope" id="envelope">
+          <div class="env-flap" id="env-flap"><span class="env-seal">✦</span></div>
+          <div class="env-pocket"></div>
+          <div class="env-back"></div>
+        </div>
+      </div>
+      <span class="eyebrow gate-reveal d1"><span class="dot"></span> <span id="eyebrow-name">Para você</span></span>
+      <h1 class="display gate-reveal d2" id="gate-headline">Não vim com joguinho. Vim com date marcado.</h1>
+      <p class="lede gate-reveal d3" id="gate-sub">Isso aqui não é bem um convite qualquer. É a sua próxima boa decisão.</p>
+      <div class="btn-row gate-reveal d4">
         <button class="btn btn-primary" id="btn-open">Bora ✦</button>
         <span id="dodge-wrap">
           <button class="btn btn-ghost" id="btn-decline">Depois eu vejo</button>
         </span>
       </div>
-      <p class="hint">(esse botão aí foge um pouco, já aviso 😏)</p>
+      <p class="hint gate-reveal d5">(esse botão aí foge um pouco, já aviso 😏)</p>
       <p id="decline-msg" class="hint" style="opacity:0; transition:opacity .4s;">foge não, quando quiser é só voltar aqui 😏</p>
     </div>
   </section>
@@ -415,6 +527,34 @@ function renderInvite(CONFIG){
     } else {
       old.textContent = CONFIG.eventLocation;
     }
+  })();
+
+  // --- abertura do envelope: primeira impressão animada do stage 1 ---
+  (function envelopeIntro(){
+    const scene = document.getElementById('envelope-scene');
+    const burst = document.getElementById('env-burst');
+    if (!scene || !burst) return;
+
+    const glyphs = ['✦','✨','🧡','✧'];
+    for (let i = 0; i < 10; i++){
+      const s = document.createElement('span');
+      s.textContent = glyphs[i % glyphs.length];
+      const angle = (Math.PI * 2 * i / 10) + (Math.random() * 0.4);
+      const dist = 70 + Math.random() * 40;
+      s.style.setProperty('--bx', (Math.cos(angle) * dist).toFixed(0) + 'px');
+      s.style.setProperty('--by', (Math.sin(angle) * dist - 20).toFixed(0) + 'px');
+      s.style.animationDelay = (Math.random() * 0.15) + 's';
+      burst.appendChild(s);
+    }
+
+    setTimeout(function(){
+      scene.classList.add('open');
+      setTimeout(function(){ scene.classList.add('settled'); }, 900);
+    }, 450);
+
+    setTimeout(function(){
+      document.querySelectorAll('.gate-reveal').forEach(function(el){ el.classList.add('shown'); });
+    }, 900);
   })();
 
   document.getElementById('btn-open').addEventListener('click', function(){ goTo(2); });
