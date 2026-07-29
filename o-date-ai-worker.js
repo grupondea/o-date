@@ -155,7 +155,8 @@ async function handleGenerate(request, env, origin){
       body: JSON.stringify(anthropicPayload)
     });
   } catch (e) {
-    return jsonResponse({ error: 'Não consegui falar com a API da Claude agora. Tenta de novo em instantes.' }, 502, origin);
+    console.error('Falha no fetch pra Anthropic:', e && e.stack ? e.stack : (e && e.message ? e.message : String(e)));
+    return jsonResponse({ error: 'Não consegui falar com a API da Claude agora. Tenta de novo em instantes.', debug: e && e.message ? e.message : String(e) }, 502, origin);
   }
 
   if (!anthropicRes.ok){
