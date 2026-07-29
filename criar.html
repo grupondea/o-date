@@ -213,8 +213,21 @@
 
       <fieldset>
         <legend>Quem vai receber</legend>
+        <div class="clima-grid" id="mode-grid">
+          <button type="button" class="clima-card selected" data-mode="solo">
+            <span class="clima-title">1 pessoa</span>
+            <span class="clima-desc">O clássico: um convite, uma pessoa</span>
+          </button>
+          <button type="button" class="clima-card" data-mode="dupla">
+            <span class="clima-title">2 pessoas 🔥</span>
+            <span class="clima-desc">Convite pra duas pessoas ao mesmo tempo</span>
+          </button>
+        </div>
         <label>Nome da pessoa convidada <span class="req">*</span>
           <input id="f-guestName" placeholder="Ex: Ana">
+        </label>
+        <label id="f-guestName2-wrap" hidden>Nome da segunda pessoa convidada <span class="req">*</span>
+          <input id="f-guestName2" placeholder="Ex: Bruna">
         </label>
         <label>Emoji do convite <em>(opcional — aparece do lado do nome dela na primeira tela)</em>
           <input id="f-emoji" placeholder="Ex: 🔥" maxlength="4">
@@ -254,6 +267,19 @@
         </label>
         <label>Link do mapa <em>(opcional — o local vira clicável)</em>
           <input id="f-locationLink" placeholder="https://maps.google.com/...">
+        </label>
+      </fieldset>
+
+      <fieldset id="after-fieldset" hidden>
+        <legend>Depois do encontro <em>(só pra convites de 2 pessoas)</em></legend>
+        <label>Onde vai ser o "depois" <em>(opcional)</em>
+          <input id="f-afterLocation" placeholder="Ex: Bar Tal, casa de jogos de tabuleiro...">
+        </label>
+        <label>Link do mapa do "depois" <em>(opcional — vira clicável)</em>
+          <input id="f-afterLocationLink" placeholder="https://maps.google.com/...">
+        </label>
+        <label>O que vocês vão fazer lá <em>(opcional — solte a criatividade: jogos de tabuleiro, bar, o que quiser)</em>
+          <textarea id="f-afterNote" rows="2" placeholder="Ex: depois do jantar, bora pra uma casa de jogos de tabuleiro pra ver quem ganha..."></textarea>
         </label>
       </fieldset>
 
@@ -783,8 +809,14 @@ const TEMPLATE = `<!DOCTYPE html>
         </div>
       </div>
 
+      <div class="card" id="after-card" style="display:none;">
+        <h2>Depois do encontro 🎲</h2>
+        <p id="after-location" style="margin:0 0 6px;"></p>
+        <p id="after-note" style="margin:0;"></p>
+      </div>
+
       <div class="card rsvp">
-        <h2 style="text-align:center;">Vai ter lugar guardado com seu nome</h2>
+        <h2 style="text-align:center;" id="rsvp-title">Vai ter lugar guardado com seu nome</h2>
         <div class="btn-row">
           <button class="btn btn-primary" id="btn-yes">Sim, eu vou</button>
           <button class="btn btn-ghost" id="btn-maybe">Ainda não sei</button>
@@ -811,6 +843,11 @@ const CONFIG = {
   // pessoa convidada
   guestName: "%%GUEST_NAME%%",
 
+  // "solo" (padrão) ou "dupla" — convite pra 2 pessoas ao mesmo tempo
+  guestMode: "%%GUEST_MODE%%",
+  // só usado quando guestMode === "dupla"
+  guestName2: "%%GUEST_NAME_2%%",
+
   // quem está convidando
   hostName: "%%HOST_NAME%%",
 
@@ -832,6 +869,11 @@ const CONFIG = {
   // local — se tiver um link de mapa, o texto vira clicável
   eventLocation: "%%EVENT_LOCATION%%",
   eventLocationLink: "%%EVENT_LOCATION_LINK%%",
+
+  // opcional: "depois do encontro" — só usado quando guestMode === "dupla"
+  afterLocation: "%%AFTER_LOCATION%%",
+  afterLocationLink: "%%AFTER_LOCATION_LINK%%",
+  afterNote: "%%AFTER_NOTE%%",
 
   // opcional: se preencher, o RSVP abre o WhatsApp com a resposta pronta
   // formato: código do país + DDD + número, só números. Ex: "5551999999999"
@@ -862,16 +904,32 @@ function setText(id, text){
   if (el) el.textContent = text;
 }
 
-setText('eyebrow-name', (CONFIG.inviteEmoji ? CONFIG.inviteEmoji + " " : "") + "Para " + CONFIG.guestName);
+// junta nomes com vírgula + "&" antes do último (ex: "Ana, Bruna & Mauricio")
+function namesJoin(list){
+  const arr = list.filter(Boolean);
+  if (arr.length <= 1) return arr.join('');
+  return arr.slice(0, -1).join(', ') + ' & ' + arr[arr.length - 1];
+}
+
+// nome(s) da pessoa convidada pra exibição — junta os dois nomes quando for convite pra 2 pessoas
+function guestDisplayName(CONFIG){
+  if (CONFIG.guestMode === 'dupla' && CONFIG.guestName2){
+    return namesJoin([CONFIG.guestName, CONFIG.guestName2]);
+  }
+  return CONFIG.guestName;
+}
+
+setText('eyebrow-name', (CONFIG.inviteEmoji ? CONFIG.inviteEmoji + " " : "") + "Para " + guestDisplayName(CONFIG));
 setText('gate-headline', CONFIG.gateHeadline);
 setText('gate-sub', CONFIG.gateSub);
-setText('guest-name-inline', CONFIG.guestName);
+setText('guest-name-inline', guestDisplayName(CONFIG));
 setText('invite-message', CONFIG.message);
 setText('detail-date', CONFIG.eventDateLabel);
 setText('detail-time', CONFIG.eventTime);
 setText('host-name-footer', CONFIG.hostName);
 setText('btn-yes', CONFIG.btnYesLabel);
 setText('btn-maybe', CONFIG.btnMaybeLabel);
+setText('rsvp-title', CONFIG.guestMode === 'dupla' ? 'Vai ter lugar guardado com os nomes de vocês' : 'Vai ter lugar guardado com seu nome');
 
 // local: texto simples, ou link clicável se houver eventLocationLink
 (function renderLocation(){
@@ -889,6 +947,31 @@ setText('btn-maybe', CONFIG.btnMaybeLabel);
   } else {
     old.textContent = CONFIG.eventLocation;
   }
+})();
+
+// "depois do encontro" — só aparece em convite pra 2 pessoas com esse campo preenchido
+(function renderAfter(){
+  const card = document.getElementById('after-card');
+  if (!card) return;
+  const hasAfter = CONFIG.guestMode === 'dupla' && (CONFIG.afterLocation || CONFIG.afterNote);
+  if (!hasAfter){ card.style.display = 'none'; return; }
+  card.style.display = '';
+
+  const locEl = document.getElementById('after-location');
+  while (locEl.firstChild) locEl.removeChild(locEl.firstChild);
+  if (CONFIG.afterLocation){
+    if (CONFIG.afterLocationLink){
+      const a = document.createElement('a');
+      a.href = CONFIG.afterLocationLink;
+      a.target = '_blank';
+      a.rel = 'noopener';
+      a.textContent = '📍 ' + CONFIG.afterLocation + ' ↗';
+      locEl.appendChild(a);
+    } else {
+      locEl.textContent = '📍 ' + CONFIG.afterLocation;
+    }
+  }
+  setText('after-note', CONFIG.afterNote || '');
 })();
 
 // --- partículas flutuantes de fundo ---
@@ -1043,8 +1126,13 @@ setupDodge('dodge-wrap', 'btn-decline', 'decline-msg');
     function fmt(d){
       return d.getFullYear() + pad2(d.getMonth()+1) + pad2(d.getDate()) + 'T' + pad2(d.getHours()) + pad2(d.getMinutes()) + '00';
     }
-    const title = 'O DATE — ' + CONFIG.hostName + ' & ' + CONFIG.guestName;
-    const details = (CONFIG.message ? CONFIG.message + '\n\n' : '') + 'Confirmado pelo O DATE.';
+    const allNames = [CONFIG.hostName, CONFIG.guestName];
+    if (CONFIG.guestMode === 'dupla' && CONFIG.guestName2) allNames.push(CONFIG.guestName2);
+    const title = 'O DATE — ' + namesJoin(allNames);
+    let details = (CONFIG.message ? CONFIG.message + '\n\n' : '') + 'Confirmado pelo O DATE.';
+    if (CONFIG.guestMode === 'dupla' && (CONFIG.afterLocation || CONFIG.afterNote)){
+      details += '\n\nDepois: ' + [CONFIG.afterLocation, CONFIG.afterNote].filter(Boolean).join(' — ');
+    }
     const params = new URLSearchParams({
       action: 'TEMPLATE',
       text: title,
@@ -1095,6 +1183,8 @@ setupDodge('dodge-wrap', 'btn-decline', 'decline-msg');
 
 const DEFAULTS = {
   guestName: "Você",
+  guestMode: "solo",
+  guestName2: "",
   hostName: "Mauricio",
   inviteEmoji: "🔥",
   gateHeadline: "Não vim com joguinho. Vim com date marcado.",
@@ -1105,6 +1195,9 @@ const DEFAULTS = {
   eventTime: "20h00",
   eventLocation: "A combinar",
   eventLocationLink: "",
+  afterLocation: "",
+  afterLocationLink: "",
+  afterNote: "",
   whatsappNumber: "",
   btnYesLabel: "Bora, eu vou 🔥",
   btnMaybeLabel: "Deixa eu pensar 😅",
@@ -1181,6 +1274,8 @@ function getValues(){
   const timeStr = val('f-time');
   return {
     guestName: val('f-guestName') || DEFAULTS.guestName,
+    guestMode: currentGuestMode(),
+    guestName2: val('f-guestName2'),
     hostName: val('f-hostName') || DEFAULTS.hostName,
     inviteEmoji: val('f-emoji'),
     gateHeadline: val('f-gateHeadline') || DEFAULTS.gateHeadline,
@@ -1191,6 +1286,9 @@ function getValues(){
     eventTime: timeStr ? (formatTimeLabel(timeStr) || DEFAULTS.eventTime) : DEFAULTS.eventTime,
     eventLocation: val('f-location') || DEFAULTS.eventLocation,
     eventLocationLink: val('f-locationLink'),
+    afterLocation: val('f-afterLocation'),
+    afterLocationLink: val('f-afterLocationLink'),
+    afterNote: val('f-afterNote'),
     whatsappNumber: val('f-whatsappNumber').replace(/\D/g, ''),
     btnYesLabel: val('f-btnYesLabel') || DEFAULTS.btnYesLabel,
     btnMaybeLabel: val('f-btnMaybeLabel') || DEFAULTS.btnMaybeLabel,
@@ -1214,6 +1312,8 @@ function escJs(str){
 function buildHTML(v){
   const map = {
     '%%GUEST_NAME%%': v.guestName,
+    '%%GUEST_MODE%%': v.guestMode,
+    '%%GUEST_NAME_2%%': v.guestName2,
     '%%HOST_NAME%%': v.hostName,
     '%%INVITE_EMOJI%%': v.inviteEmoji,
     '%%GATE_HEADLINE%%': v.gateHeadline,
@@ -1224,6 +1324,9 @@ function buildHTML(v){
     '%%EVENT_TIME%%': v.eventTime,
     '%%EVENT_LOCATION%%': v.eventLocation,
     '%%EVENT_LOCATION_LINK%%': v.eventLocationLink,
+    '%%AFTER_LOCATION%%': v.afterLocation,
+    '%%AFTER_LOCATION_LINK%%': v.afterLocationLink,
+    '%%AFTER_NOTE%%': v.afterNote,
     '%%WHATSAPP_NUMBER%%': v.whatsappNumber,
     '%%BTN_YES_LABEL%%': v.btnYesLabel,
     '%%BTN_MAYBE_LABEL%%': v.btnMaybeLabel,
@@ -1251,6 +1354,38 @@ function updatePreview(){
   const iframe = document.getElementById('preview');
   iframe.srcdoc = buildHTML(getValues());
 }
+
+/* ============================================================
+   MODO DO CONVITE — 1 pessoa (padrão) ou 2 pessoas ao mesmo tempo.
+   Escolher "2 pessoas" revela o campo do segundo nome e o bloco
+   opcional de "depois do encontro".
+============================================================ */
+function currentGuestMode(){
+  const selected = document.querySelector('#mode-grid .clima-card.selected');
+  return (selected && selected.dataset.mode === 'dupla') ? 'dupla' : 'solo';
+}
+
+(function modePicker(){
+  const grid = document.getElementById('mode-grid');
+  if (!grid) return;
+  const cards = grid.querySelectorAll('.clima-card');
+  const guest2Wrap = document.getElementById('f-guestName2-wrap');
+  const afterFieldset = document.getElementById('after-fieldset');
+
+  function applyMode(mode){
+    cards.forEach(function(c){ c.classList.toggle('selected', c.dataset.mode === mode); });
+    const dupla = mode === 'dupla';
+    if (guest2Wrap) guest2Wrap.hidden = !dupla;
+    if (afterFieldset) afterFieldset.hidden = !dupla;
+  }
+
+  cards.forEach(function(card){
+    card.addEventListener('click', function(){
+      applyMode(card.dataset.mode);
+      updatePreview();
+    });
+  });
+})();
 
 document.getElementById('invite-form').addEventListener('input', updatePreview);
 updatePreview();
@@ -1339,6 +1474,8 @@ updatePreview();
 
   function buildAiPrompt(){
     const guestName = val('f-guestName') || 'a pessoa convidada';
+    const guestName2 = val('f-guestName2');
+    const isDupla = currentGuestMode() === 'dupla';
     const dateStr = val('f-date');
     const timeStr = val('f-time');
     const dateLabel = dateStr ? (formatDateLabel(dateStr) || dateStr) : '';
@@ -1346,9 +1483,18 @@ updatePreview();
     const location = val('f-location') || '(local ainda não definido)';
     const context = val('f-ai-context');
 
-    let publico = 'Quem vai receber: ' + guestName + '. Vou convidar essa pessoa pra um encontro em ' + location + '.';
+    let publico = (isDupla && guestName2)
+      ? 'Quem vai receber: ' + guestName + ' e ' + guestName2 + ', as duas juntas. Vou convidar as duas pessoas pra um encontro em ' + location + '.'
+      : 'Quem vai receber: ' + guestName + '. Vou convidar essa pessoa pra um encontro em ' + location + '.';
     if (dateLabel){
       publico += ' Vai ser no dia ' + dateLabel + (timeLabel ? ', às ' + timeLabel : '') + '.';
+    }
+    if (isDupla){
+      const afterLoc = val('f-afterLocation');
+      const afterNote = val('f-afterNote');
+      if (afterLoc || afterNote){
+        publico += ' Depois desse primeiro encontro, o plano é ' + [afterLoc, afterNote].filter(Boolean).join(', ') + '.';
+      }
     }
     if (context){
       publico += ' Contexto extra: ' + context;
@@ -1452,6 +1598,7 @@ updatePreview();
 
   publishBtn.addEventListener('click', function(){
     const requiredIds = ['f-guestName', 'f-date', 'f-time', 'f-location', 'f-message'];
+    if (currentGuestMode() === 'dupla') requiredIds.push('f-guestName2');
     let firstMissing = null;
     requiredIds.forEach(function(id){
       const el = document.getElementById(id);
@@ -1488,7 +1635,10 @@ updatePreview();
         linkOut.value = finalLink;
         linkWrap.hidden = false;
         linkActions.hidden = false;
-        formMsg.textContent = 'Publicado! Envie o link acima pra ' + values.guestName + '.';
+        const guestLabel = (values.guestMode === 'dupla' && values.guestName2)
+          ? values.guestName + ' e ' + values.guestName2
+          : values.guestName;
+        formMsg.textContent = 'Publicado! Envie o link acima pra ' + guestLabel + '.';
       })
       .catch(function(err){
         formMsg.textContent = err && err.status ? friendlyError(err.status) : 'Não consegui publicar agora. Confira sua internet e tente de novo.';
@@ -1521,6 +1671,7 @@ updatePreview();
 
 document.getElementById('btn-generate').addEventListener('click', function(){
   const requiredIds = ['f-guestName', 'f-date', 'f-time', 'f-location', 'f-message'];
+  if (currentGuestMode() === 'dupla') requiredIds.push('f-guestName2');
   let firstMissing = null;
   requiredIds.forEach(function(id){
     const el = document.getElementById(id);

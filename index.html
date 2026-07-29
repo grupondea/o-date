@@ -448,8 +448,14 @@
         </div>
       </div>
 
+      <div class="card" id="after-card" style="display:none;">
+        <h2>Depois do encontro 🎲</h2>
+        <p id="after-location" style="margin:0 0 6px;"></p>
+        <p id="after-note" style="margin:0;"></p>
+      </div>
+
       <div class="card rsvp">
-        <h2 style="text-align:center;">Vai ter lugar guardado com seu nome</h2>
+        <h2 style="text-align:center;" id="rsvp-title">Vai ter lugar guardado com seu nome</h2>
         <div class="btn-row">
           <button class="btn btn-primary" id="btn-yes">Sim, eu vou</button>
           <button class="btn btn-ghost" id="btn-maybe">Ainda não sei</button>
@@ -515,17 +521,33 @@ function showError(detail){
   }
 })();
 
+// junta nomes com vírgula + "&" antes do último (ex: "Ana, Bruna & Mauricio")
+function namesJoin(list){
+  const arr = list.filter(Boolean);
+  if (arr.length <= 1) return arr.join('');
+  return arr.slice(0, -1).join(', ') + ' & ' + arr[arr.length - 1];
+}
+
+// nome(s) da pessoa convidada pra exibição — junta os dois nomes quando for convite pra 2 pessoas
+function guestDisplayName(CONFIG){
+  if (CONFIG.guestMode === 'dupla' && CONFIG.guestName2){
+    return namesJoin([CONFIG.guestName, CONFIG.guestName2]);
+  }
+  return CONFIG.guestName;
+}
+
 function renderInvite(CONFIG){
-  setText('eyebrow-name', (CONFIG.inviteEmoji ? CONFIG.inviteEmoji + " " : "") + "Para " + CONFIG.guestName);
+  setText('eyebrow-name', (CONFIG.inviteEmoji ? CONFIG.inviteEmoji + " " : "") + "Para " + guestDisplayName(CONFIG));
   setText('gate-headline', CONFIG.gateHeadline);
   setText('gate-sub', CONFIG.gateSub);
-  setText('guest-name-inline', CONFIG.guestName);
+  setText('guest-name-inline', guestDisplayName(CONFIG));
   setText('invite-message', CONFIG.message);
   setText('detail-date', CONFIG.eventDateLabel);
   setText('detail-time', CONFIG.eventTime);
   setText('host-name-footer', CONFIG.hostName);
   setText('btn-yes', CONFIG.btnYesLabel);
   setText('btn-maybe', CONFIG.btnMaybeLabel);
+  setText('rsvp-title', CONFIG.guestMode === 'dupla' ? 'Vai ter lugar guardado com os nomes de vocês' : 'Vai ter lugar guardado com seu nome');
 
   // local: texto simples, ou link clicável se houver eventLocationLink
   (function renderLocation(){
@@ -543,6 +565,31 @@ function renderInvite(CONFIG){
     } else {
       old.textContent = CONFIG.eventLocation;
     }
+  })();
+
+  // "depois do encontro" — só aparece em convite pra 2 pessoas com esse campo preenchido
+  (function renderAfter(){
+    const card = document.getElementById('after-card');
+    if (!card) return;
+    const hasAfter = CONFIG.guestMode === 'dupla' && (CONFIG.afterLocation || CONFIG.afterNote);
+    if (!hasAfter){ card.style.display = 'none'; return; }
+    card.style.display = '';
+
+    const locEl = document.getElementById('after-location');
+    while (locEl.firstChild) locEl.removeChild(locEl.firstChild);
+    if (CONFIG.afterLocation){
+      if (CONFIG.afterLocationLink){
+        const a = document.createElement('a');
+        a.href = CONFIG.afterLocationLink;
+        a.target = '_blank';
+        a.rel = 'noopener';
+        a.textContent = '📍 ' + CONFIG.afterLocation + ' ↗';
+        locEl.appendChild(a);
+      } else {
+        locEl.textContent = '📍 ' + CONFIG.afterLocation;
+      }
+    }
+    setText('after-note', CONFIG.afterNote || '');
   })();
 
   // --- abertura do envelope: primeira impressão animada do stage 1 ---
@@ -666,8 +713,13 @@ function renderInvite(CONFIG){
       function fmt(d){
         return d.getFullYear() + pad2(d.getMonth()+1) + pad2(d.getDate()) + 'T' + pad2(d.getHours()) + pad2(d.getMinutes()) + '00';
       }
-      const title = 'O DATE — ' + CONFIG.hostName + ' & ' + CONFIG.guestName;
-      const details = (CONFIG.message ? CONFIG.message + '\n\n' : '') + 'Confirmado pelo O DATE.';
+      const allNames = [CONFIG.hostName, CONFIG.guestName];
+      if (CONFIG.guestMode === 'dupla' && CONFIG.guestName2) allNames.push(CONFIG.guestName2);
+      const title = 'O DATE — ' + namesJoin(allNames);
+      let details = (CONFIG.message ? CONFIG.message + '\n\n' : '') + 'Confirmado pelo O DATE.';
+      if (CONFIG.guestMode === 'dupla' && (CONFIG.afterLocation || CONFIG.afterNote)){
+        details += '\n\nDepois: ' + [CONFIG.afterLocation, CONFIG.afterNote].filter(Boolean).join(' — ');
+      }
       const params = new URLSearchParams({
         action: 'TEMPLATE',
         text: title,
