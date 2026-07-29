@@ -1,0 +1,3 @@
+name = "o-date-ai"
+main = "o-date-ai-worker.js"
+compatibility_date = "2026-07-29"
