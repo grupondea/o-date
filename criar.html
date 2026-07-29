@@ -212,6 +212,19 @@
       </fieldset>
 
       <fieldset>
+        <legend>Personalize o date</legend>
+        <label>Nome do date <em>(opcional — aparece na tela de abertura e no título da aba)</em>
+          <input id="f-eventTitle" placeholder="Ex: Jantar à luz de velas">
+        </label>
+        <label>Título da primeira tela
+          <input id="f-gateHeadline" placeholder="Não vim com joguinho. Vim com date marcado.">
+        </label>
+        <label>Subtítulo da primeira tela
+          <input id="f-gateSub" placeholder="Isso aqui não é bem um convite qualquer. É a sua próxima boa decisão.">
+        </label>
+      </fieldset>
+
+      <fieldset>
         <legend>Quem vai receber</legend>
         <div class="clima-grid" id="mode-grid">
           <button type="button" class="clima-card selected" data-mode="solo">
@@ -359,13 +372,7 @@
       </fieldset>
 
       <details>
-        <summary>Opções avançadas (textos da primeira tela e do WhatsApp)</summary>
-        <label>Frase de abertura (primeira tela, antes de revelar o convite)
-          <input id="f-gateHeadline" placeholder="Não vim com joguinho. Vim com date marcado.">
-        </label>
-        <label>Subtítulo da primeira tela
-          <input id="f-gateSub" placeholder="Isso aqui não é bem um convite qualquer. É a sua próxima boa decisão.">
-        </label>
+        <summary>Opções avançadas (textos do WhatsApp)</summary>
         <label>Mensagem de WhatsApp se ela disser "sim" <em>(use <code>{host}</code> pro seu nome entrar sozinho)</em>
           <input id="f-waMessageYes" placeholder="Oi {host}! Recebi o convite O DATE e a resposta é: SIM, bora! 🔥">
         </label>
@@ -775,6 +782,7 @@ const TEMPLATE = `<!DOCTYPE html>
           <div class="env-back"></div>
         </div>
       </div>
+      <span class="eyebrow gate-reveal d1" id="envelope-eventtitle" style="display:none;"><span class="dot"></span> <span id="envelope-eventtitle-text"></span></span>
       <h1 class="display gate-reveal d2">Você recebeu um convite.</h1>
       <p class="lede gate-reveal d3">Quer matar essa curiosidade? 👀</p>
       <div class="btn-row gate-reveal d4">
@@ -909,6 +917,9 @@ const CONFIG = {
   // emoji opcional que aparece do lado do nome na primeira tela
   inviteEmoji: "%%INVITE_EMOJI%%",
 
+  // nome do date — opcional, título curto do encontro (ex: "Jantar à luz de velas")
+  eventTitle: "%%EVENT_TITLE%%",
+
   // textos da primeira tela (o "portão" antes do convite aparecer)
   gateHeadline: "%%GATE_HEADLINE%%",
   gateSub: "%%GATE_SUB%%",
@@ -983,6 +994,16 @@ function guestDisplayName(CONFIG){
 
 // tema vermelho/preto só entra em convites pra 2 pessoas — o de 1 pessoa fica igual sempre
 document.body.classList.toggle('theme-dupla', CONFIG.guestMode === 'dupla');
+
+// nome do date — opcional, vira o título da aba e aparece como selo na tela do envelope
+document.title = CONFIG.eventTitle ? CONFIG.eventTitle + ' — O DATE' : 'O DATE — Convite';
+(function renderEventTitle(){
+  const badge = document.getElementById('envelope-eventtitle');
+  if (!badge) return;
+  if (!CONFIG.eventTitle){ badge.style.display = 'none'; return; }
+  badge.style.display = '';
+  setText('envelope-eventtitle-text', CONFIG.eventTitle);
+})();
 
 setText('eyebrow-name', (CONFIG.inviteEmoji ? CONFIG.inviteEmoji + " " : "") + "Para " + guestDisplayName(CONFIG));
 setText('gate-headline', CONFIG.gateHeadline);
@@ -1280,6 +1301,7 @@ const DEFAULTS = {
   guestName2: "",
   hostName: "Mauricio",
   inviteEmoji: "🔥",
+  eventTitle: "",
   gateHeadline: "Não vim com joguinho. Vim com date marcado.",
   gateSub: "Isso aqui não é bem um convite qualquer. É a sua próxima boa decisão.",
   message: "Faz tempo que eu queria te chamar pra sair, sem enrolação e sem joguinho. Então resolvi fazer isso: um convite só seu, com data marcada e tudo certo. Só falta você dizer sim.",
@@ -1374,6 +1396,7 @@ function getValues(){
     guestName2: val('f-guestName2'),
     hostName: val('f-hostName') || DEFAULTS.hostName,
     inviteEmoji: val('f-emoji'),
+    eventTitle: val('f-eventTitle'),
     gateHeadline: val('f-gateHeadline') || DEFAULTS.gateHeadline,
     gateSub: val('f-gateSub') || DEFAULTS.gateSub,
     message: val('f-message') || DEFAULTS.message,
@@ -1415,6 +1438,7 @@ function buildHTML(v){
     '%%GUEST_NAME_2%%': v.guestName2,
     '%%HOST_NAME%%': v.hostName,
     '%%INVITE_EMOJI%%': v.inviteEmoji,
+    '%%EVENT_TITLE%%': v.eventTitle,
     '%%GATE_HEADLINE%%': v.gateHeadline,
     '%%GATE_SUB%%': v.gateSub,
     '%%MESSAGE%%': v.message,

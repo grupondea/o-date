@@ -398,6 +398,7 @@
           <div class="env-back"></div>
         </div>
       </div>
+      <span class="eyebrow gate-reveal d1" id="envelope-eventtitle" style="display:none;"><span class="dot"></span> <span id="envelope-eventtitle-text"></span></span>
       <h1 class="display gate-reveal d2">Você recebeu um convite.</h1>
       <p class="lede gate-reveal d3">Quer matar essa curiosidade? 👀</p>
       <div class="btn-row gate-reveal d4">
@@ -579,6 +580,16 @@ function guestDisplayName(CONFIG){
 function renderInvite(CONFIG){
   // tema vermelho/preto só entra em convites pra 2 pessoas — o de 1 pessoa fica igual sempre
   document.body.classList.toggle('theme-dupla', CONFIG.guestMode === 'dupla');
+
+  // nome do date — opcional, vira o título da aba e aparece como selo na tela do envelope
+  document.title = CONFIG.eventTitle ? CONFIG.eventTitle + ' — O DATE' : 'O DATE — Convite';
+  (function renderEventTitle(){
+    const badge = document.getElementById('envelope-eventtitle');
+    if (!badge) return;
+    if (!CONFIG.eventTitle){ badge.style.display = 'none'; return; }
+    badge.style.display = '';
+    setText('envelope-eventtitle-text', CONFIG.eventTitle);
+  })();
 
   setText('eyebrow-name', (CONFIG.inviteEmoji ? CONFIG.inviteEmoji + " " : "") + "Para " + guestDisplayName(CONFIG));
   setText('gate-headline', CONFIG.gateHeadline);
