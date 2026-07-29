@@ -270,15 +270,25 @@
         </label>
       </fieldset>
 
-      <fieldset id="after-fieldset" hidden>
-        <legend>Depois do encontro <em>(só pra convites de 2 pessoas)</em></legend>
-        <label>Onde vai ser o "depois" <em>(opcional)</em>
+      <fieldset>
+        <legend>Logística <em>(opcional)</em></legend>
+        <label>Como vamos até o lugar? <em>(opcional)</em>
+          <input id="f-transport" placeholder="Ex: eu te busco de carro às 20h, ou cada um vai por conta própria...">
+        </label>
+        <label>Quem vai pagar a conta? <em>(opcional)</em>
+          <input id="f-whoPays" placeholder="Ex: fico com essa, ou rachamos...">
+        </label>
+      </fieldset>
+
+      <fieldset id="after-fieldset">
+        <legend>Depois do encontro <em>(opcional)</em></legend>
+        <label>Pra onde vamos depois? <em>(opcional)</em>
           <input id="f-afterLocation" placeholder="Ex: Bar Tal, casa de jogos de tabuleiro...">
         </label>
         <label>Link do mapa do "depois" <em>(opcional — vira clicável)</em>
           <input id="f-afterLocationLink" placeholder="https://maps.google.com/...">
         </label>
-        <label>O que vocês vão fazer lá <em>(opcional — solte a criatividade: jogos de tabuleiro, bar, o que quiser)</em>
+        <label>O que vamos fazer após? <em>(opcional — solte a criatividade: jogos de tabuleiro, bar, o que quiser)</em>
           <textarea id="f-afterNote" rows="2" placeholder="Ex: depois do jantar, bora pra uma casa de jogos de tabuleiro pra ver quem ganha..."></textarea>
         </label>
       </fieldset>
@@ -848,6 +858,12 @@ const TEMPLATE = `<!DOCTYPE html>
         <a id="playlist-link" href="#" target="_blank" rel="noopener" class="btn btn-ghost" style="width:100%;">Ouvir playlist ↗</a>
       </div>
 
+      <div class="card" id="logistics-card" style="display:none;">
+        <h2>Como vai ser 🚗</h2>
+        <p id="logistics-transport" style="margin:0 0 6px; display:none;"></p>
+        <p id="logistics-whopays" style="margin:0; display:none;"></p>
+      </div>
+
       <div class="card" id="after-card" style="display:none;">
         <h2>Depois do encontro 🎲</h2>
         <p id="after-location" style="margin:0 0 6px;"></p>
@@ -909,7 +925,11 @@ const CONFIG = {
   eventLocation: "%%EVENT_LOCATION%%",
   eventLocationLink: "%%EVENT_LOCATION_LINK%%",
 
-  // opcional: "depois do encontro" — só usado quando guestMode === "dupla"
+  // opcional: logística — disponível pra convite de 1 ou 2 pessoas
+  transport: "%%TRANSPORT%%",
+  whoPays: "%%WHO_PAYS%%",
+
+  // opcional: "depois do encontro" — disponível pra convite de 1 ou 2 pessoas
   afterLocation: "%%AFTER_LOCATION%%",
   afterLocationLink: "%%AFTER_LOCATION_LINK%%",
   afterNote: "%%AFTER_NOTE%%",
@@ -1006,11 +1026,24 @@ setText('rsvp-title', CONFIG.guestMode === 'dupla' ? 'Vai ter lugar guardado com
   setText('playlist-title', icon + ' Trilha do encontro');
 })();
 
-// "depois do encontro" — só aparece em convite pra 2 pessoas com esse campo preenchido
+// como chegar / quem paga — opcional, disponível pra convite de 1 ou 2 pessoas
+(function renderLogistics(){
+  const card = document.getElementById('logistics-card');
+  if (!card) return;
+  const hasLogistics = CONFIG.transport || CONFIG.whoPays;
+  if (!hasLogistics){ card.style.display = 'none'; return; }
+  card.style.display = '';
+  const t = document.getElementById('logistics-transport');
+  if (CONFIG.transport){ t.textContent = '🚗 ' + CONFIG.transport; t.style.display = ''; } else { t.style.display = 'none'; }
+  const p = document.getElementById('logistics-whopays');
+  if (CONFIG.whoPays){ p.textContent = '💳 ' + CONFIG.whoPays; p.style.display = ''; } else { p.style.display = 'none'; }
+})();
+
+// "depois do encontro" — opcional, disponível pra convite de 1 ou 2 pessoas
 (function renderAfter(){
   const card = document.getElementById('after-card');
   if (!card) return;
-  const hasAfter = CONFIG.guestMode === 'dupla' && (CONFIG.afterLocation || CONFIG.afterNote);
+  const hasAfter = CONFIG.afterLocation || CONFIG.afterNote;
   if (!hasAfter){ card.style.display = 'none'; return; }
   card.style.display = '';
 
@@ -1187,7 +1220,10 @@ setupDodge('dodge-wrap', 'btn-decline', 'decline-msg');
     if (CONFIG.guestMode === 'dupla' && CONFIG.guestName2) allNames.push(CONFIG.guestName2);
     const title = 'O DATE — ' + namesJoin(allNames);
     let details = (CONFIG.message ? CONFIG.message + '\n\n' : '') + 'Confirmado pelo O DATE.';
-    if (CONFIG.guestMode === 'dupla' && (CONFIG.afterLocation || CONFIG.afterNote)){
+    if (CONFIG.transport || CONFIG.whoPays){
+      details += '\n\n' + [CONFIG.transport ? 'Como chegar: ' + CONFIG.transport : '', CONFIG.whoPays ? 'Quem paga: ' + CONFIG.whoPays : ''].filter(Boolean).join(' — ');
+    }
+    if (CONFIG.afterLocation || CONFIG.afterNote){
       details += '\n\nDepois: ' + [CONFIG.afterLocation, CONFIG.afterNote].filter(Boolean).join(' — ');
     }
     const params = new URLSearchParams({
@@ -1252,6 +1288,8 @@ const DEFAULTS = {
   eventTime: "20h00",
   eventLocation: "A combinar",
   eventLocationLink: "",
+  transport: "",
+  whoPays: "",
   afterLocation: "",
   afterLocationLink: "",
   afterNote: "",
@@ -1344,6 +1382,8 @@ function getValues(){
     eventTime: timeStr ? (formatTimeLabel(timeStr) || DEFAULTS.eventTime) : DEFAULTS.eventTime,
     eventLocation: val('f-location') || DEFAULTS.eventLocation,
     eventLocationLink: val('f-locationLink'),
+    transport: val('f-transport'),
+    whoPays: val('f-whoPays'),
     afterLocation: val('f-afterLocation'),
     afterLocationLink: val('f-afterLocationLink'),
     afterNote: val('f-afterNote'),
@@ -1383,6 +1423,8 @@ function buildHTML(v){
     '%%EVENT_TIME%%': v.eventTime,
     '%%EVENT_LOCATION%%': v.eventLocation,
     '%%EVENT_LOCATION_LINK%%': v.eventLocationLink,
+    '%%TRANSPORT%%': v.transport,
+    '%%WHO_PAYS%%': v.whoPays,
     '%%AFTER_LOCATION%%': v.afterLocation,
     '%%AFTER_LOCATION_LINK%%': v.afterLocationLink,
     '%%AFTER_NOTE%%': v.afterNote,
@@ -1430,13 +1472,11 @@ function currentGuestMode(){
   if (!grid) return;
   const cards = grid.querySelectorAll('.clima-card');
   const guest2Wrap = document.getElementById('f-guestName2-wrap');
-  const afterFieldset = document.getElementById('after-fieldset');
 
   function applyMode(mode){
     cards.forEach(function(c){ c.classList.toggle('selected', c.dataset.mode === mode); });
     const dupla = mode === 'dupla';
     if (guest2Wrap) guest2Wrap.hidden = !dupla;
-    if (afterFieldset) afterFieldset.hidden = !dupla;
   }
 
   cards.forEach(function(card){
@@ -1549,12 +1589,10 @@ updatePreview();
     if (dateLabel){
       publico += ' Vai ser no dia ' + dateLabel + (timeLabel ? ', às ' + timeLabel : '') + '.';
     }
-    if (isDupla){
-      const afterLoc = val('f-afterLocation');
-      const afterNote = val('f-afterNote');
-      if (afterLoc || afterNote){
-        publico += ' Depois desse primeiro encontro, o plano é ' + [afterLoc, afterNote].filter(Boolean).join(', ') + '.';
-      }
+    const afterLoc = val('f-afterLocation');
+    const afterNote = val('f-afterNote');
+    if (afterLoc || afterNote){
+      publico += ' Depois desse primeiro encontro, o plano é ' + [afterLoc, afterNote].filter(Boolean).join(', ') + '.';
     }
     if (context){
       publico += ' Contexto extra: ' + context;

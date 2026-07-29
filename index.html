@@ -482,6 +482,12 @@
         <a id="playlist-link" href="#" target="_blank" rel="noopener" class="btn btn-ghost" style="width:100%;">Ouvir playlist ↗</a>
       </div>
 
+      <div class="card" id="logistics-card" style="display:none;">
+        <h2>Como vai ser 🚗</h2>
+        <p id="logistics-transport" style="margin:0 0 6px; display:none;"></p>
+        <p id="logistics-whopays" style="margin:0; display:none;"></p>
+      </div>
+
       <div class="card" id="after-card" style="display:none;">
         <h2>Depois do encontro 🎲</h2>
         <p id="after-location" style="margin:0 0 6px;"></p>
@@ -616,11 +622,24 @@ function renderInvite(CONFIG){
     setText('playlist-title', icon + ' Trilha do encontro');
   })();
 
-  // "depois do encontro" — só aparece em convite pra 2 pessoas com esse campo preenchido
+  // como chegar / quem paga — opcional, disponível pra convite de 1 ou 2 pessoas
+  (function renderLogistics(){
+    const card = document.getElementById('logistics-card');
+    if (!card) return;
+    const hasLogistics = CONFIG.transport || CONFIG.whoPays;
+    if (!hasLogistics){ card.style.display = 'none'; return; }
+    card.style.display = '';
+    const t = document.getElementById('logistics-transport');
+    if (CONFIG.transport){ t.textContent = '🚗 ' + CONFIG.transport; t.style.display = ''; } else { t.style.display = 'none'; }
+    const p = document.getElementById('logistics-whopays');
+    if (CONFIG.whoPays){ p.textContent = '💳 ' + CONFIG.whoPays; p.style.display = ''; } else { p.style.display = 'none'; }
+  })();
+
+  // "depois do encontro" — opcional, disponível pra convite de 1 ou 2 pessoas
   (function renderAfter(){
     const card = document.getElementById('after-card');
     if (!card) return;
-    const hasAfter = CONFIG.guestMode === 'dupla' && (CONFIG.afterLocation || CONFIG.afterNote);
+    const hasAfter = CONFIG.afterLocation || CONFIG.afterNote;
     if (!hasAfter){ card.style.display = 'none'; return; }
     card.style.display = '';
 
@@ -766,7 +785,10 @@ function renderInvite(CONFIG){
       if (CONFIG.guestMode === 'dupla' && CONFIG.guestName2) allNames.push(CONFIG.guestName2);
       const title = 'O DATE — ' + namesJoin(allNames);
       let details = (CONFIG.message ? CONFIG.message + '\n\n' : '') + 'Confirmado pelo O DATE.';
-      if (CONFIG.guestMode === 'dupla' && (CONFIG.afterLocation || CONFIG.afterNote)){
+      if (CONFIG.transport || CONFIG.whoPays){
+        details += '\n\n' + [CONFIG.transport ? 'Como chegar: ' + CONFIG.transport : '', CONFIG.whoPays ? 'Quem paga: ' + CONFIG.whoPays : ''].filter(Boolean).join(' — ');
+      }
+      if (CONFIG.afterLocation || CONFIG.afterNote){
         details += '\n\nDepois: ' + [CONFIG.afterLocation, CONFIG.afterNote].filter(Boolean).join(' — ');
       }
       const params = new URLSearchParams({
