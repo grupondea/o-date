@@ -111,8 +111,30 @@ function extractJsonArray(text){
     const inicio = cleaned.indexOf('[');
     const fim = cleaned.lastIndexOf(']');
     if (inicio !== -1 && fim !== -1 && fim > inicio){
-      return tentaParsear(cleaned.slice(inicio, fim + 1));
+      try {
+        return tentaParsear(cleaned.slice(inicio, fim + 1));
+      } catch (e2){
+        // segue pro último fallback abaixo
+      }
     }
+
+    // último recurso: a resposta pode ter sido cortada no meio (limite de
+    // tokens) antes de fechar o array. Em vez de desistir, recupera todas as
+    // strings JSON completas que existirem no texto, mesmo sem o array
+    // estar fechado direito.
+    if (inicio !== -1){
+      const trecho = cleaned.slice(inicio);
+      const pedacos = trecho.match(/"(?:[^"\\]|\\.)*"/g) || [];
+      const opcoes = [];
+      for (const pedaco of pedacos){
+        try {
+          const valor = JSON.parse(pedaco);
+          if (typeof valor === 'string' && valor.trim().length > 0) opcoes.push(valor);
+        } catch (e3){ /* ignora trecho malformado e segue */ }
+      }
+      if (opcoes.length > 0) return opcoes;
+    }
+
     throw e;
   }
 }
@@ -159,7 +181,7 @@ async function handleGenerate(request, env, origin){
       }
     ],
     generationConfig: {
-      maxOutputTokens: 1400,
+      maxOutputTokens: 3000,
       temperature: 0.9,
       responseMimeType: 'application/json'
     }
@@ -221,7 +243,7 @@ async function handleGenerate(request, env, origin){
   try {
     replies = extractJsonArray(textPart.text);
   } catch (e) {
-    console.error('Não consegui interpretar a resposta da IA. Texto bruto:', textPart.text.slice(0, 1000));
+    console.error('Não consegui interpretar a resposta da IA. finishReason:', candidate && candidate.finishReason, '| Texto bruto:', textPart.text.slice(0, 1000));
     return jsonResponse({ error: 'Não consegui interpretar a resposta da IA. Tenta de novo.' }, 502, origin);
   }
 
