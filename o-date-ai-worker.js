@@ -148,24 +148,47 @@ async function handleGenerate(request, env, origin){
     }
   };
 
+  // o modelo gratuito às vezes devolve 503 (sobrecarga temporária do lado do
+  // Google). Tenta de novo sozinho, com espera crescente, antes de desistir.
+  const MAX_TENTATIVAS = 3;
   let geminiRes;
-  try {
-    geminiRes = await fetch(GEMINI_URL, {
-      method: 'POST',
-      headers: {
-        'x-goog-api-key': apiKey,
-        'content-type': 'application/json'
-      },
-      body: JSON.stringify(geminiPayload)
-    });
-  } catch (e) {
-    console.error('Falha no fetch pro Gemini:', e && e.stack ? e.stack : (e && e.message ? e.message : String(e)));
-    return jsonResponse({ error: 'Não consegui falar com a API da IA agora. Tenta de novo em instantes.' }, 502, origin);
+  let ultimoErroTexto = '';
+  for (let tentativa = 1; tentativa <= MAX_TENTATIVAS; tentativa++){
+    try {
+      geminiRes = await fetch(GEMINI_URL, {
+        method: 'POST',
+        headers: {
+          'x-goog-api-key': apiKey,
+          'content-type': 'application/json'
+        },
+        body: JSON.stringify(geminiPayload)
+      });
+    } catch (e) {
+      console.error('Falha no fetch pro Gemini (tentativa ' + tentativa + '):', e && e.stack ? e.stack : (e && e.message ? e.message : String(e)));
+      geminiRes = null;
+    }
+
+    if (geminiRes && geminiRes.ok){
+      break;
+    }
+
+    if (geminiRes){
+      ultimoErroTexto = await geminiRes.text().catch(function(){ return ''; });
+      // só vale a pena tentar de novo em erro de sobrecarga/instabilidade
+      const vale_retry = geminiRes.status === 503 || geminiRes.status === 429 || geminiRes.status >= 500;
+      if (!vale_retry || tentativa === MAX_TENTATIVAS){
+        return jsonResponse({ error: 'A API da IA recusou a requisição (status ' + geminiRes.status + ').', detail: ultimoErroTexto.slice(0, 300) }, 502, origin);
+      }
+    } else if (tentativa === MAX_TENTATIVAS){
+      return jsonResponse({ error: 'Não consegui falar com a API da IA agora. Tenta de novo em instantes.' }, 502, origin);
+    }
+
+    // espera crescendo entre tentativas: 800ms, depois 1600ms
+    await new Promise(function(resolve){ setTimeout(resolve, 800 * tentativa); });
   }
 
-  if (!geminiRes.ok){
-    const errText = await geminiRes.text().catch(function(){ return ''; });
-    return jsonResponse({ error: 'A API da IA recusou a requisição (status ' + geminiRes.status + ').', detail: errText.slice(0, 300) }, 502, origin);
+  if (!geminiRes || !geminiRes.ok){
+    return jsonResponse({ error: 'A API da IA está instável agora. Tenta de novo em instantes.', detail: ultimoErroTexto.slice(0, 300) }, 502, origin);
   }
 
   const geminiJson = await geminiRes.json();
