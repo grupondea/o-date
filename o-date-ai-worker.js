@@ -5,8 +5,9 @@
    que conhece a chave da API do Gemini (secret GEMINI_API_KEY)
    — o navegador da pessoa nunca vê essa chave.
 
-   Usa a API do Google Gemini (gemini-3.5-flash) porque tem cota
-   gratuita real pra visão (imagem + texto), sem precisar de
+   Usa a API do Google Gemini (gemini-3.5-flash, com fallback pra
+   gemini-3.1-flash-lite se o principal estiver sobrecarregado) porque
+   tem cota gratuita real pra visão (imagem + texto), sem precisar de
    cartão de crédito nem billing ativado.
 
    Deploy: dash.cloudflare.com → Workers & Pages → o-date-ai →
@@ -27,8 +28,14 @@ const ALLOWED_ORIGINS = [
   'http://127.0.0.1:8000'
 ];
 
-const MODEL = 'gemini-3.5-flash';
-const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/' + MODEL + ':generateContent';
+// tenta o modelo principal primeiro (melhor qualidade) e, só se ele estiver
+// mesmo indisponível (sobrecarga do lado do Google), cai pro flash-lite —
+// que tem cota diária própria e separada, então continua funcionando mesmo
+// quando o principal está em pico de demanda.
+const MODELOS = ['gemini-3.5-flash', 'gemini-3.1-flash-lite'];
+function geminiUrl(modelo){
+  return 'https://generativelanguage.googleapis.com/v1beta/models/' + modelo + ':generateContent';
+}
 
 const SITUACOES = {
   'conversa-parada': {
@@ -188,46 +195,60 @@ async function handleGenerate(request, env, origin){
   };
 
   // o modelo gratuito às vezes devolve 503 (sobrecarga temporária do lado do
-  // Google). Tenta de novo sozinho, com espera crescente, antes de desistir.
+  // Google). Tenta de novo sozinho, com espera crescente, e se o modelo
+  // principal continuar indisponível depois de todas as tentativas, cai pro
+  // próximo modelo da lista antes de desistir de vez.
   const MAX_TENTATIVAS = 3;
   let geminiRes;
   let ultimoErroTexto = '';
-  for (let tentativa = 1; tentativa <= MAX_TENTATIVAS; tentativa++){
-    try {
-      geminiRes = await fetch(GEMINI_URL, {
-        method: 'POST',
-        headers: {
-          'x-goog-api-key': apiKey,
-          'content-type': 'application/json'
-        },
-        body: JSON.stringify(geminiPayload)
-      });
-    } catch (e) {
-      console.error('Falha no fetch pro Gemini (tentativa ' + tentativa + '):', e && e.stack ? e.stack : (e && e.message ? e.message : String(e)));
-      geminiRes = null;
-    }
+  let ultimoErroStatus = 0;
 
-    if (geminiRes && geminiRes.ok){
-      break;
-    }
-
-    if (geminiRes){
-      ultimoErroTexto = await geminiRes.text().catch(function(){ return ''; });
-      // só vale a pena tentar de novo em erro de sobrecarga/instabilidade
-      const vale_retry = geminiRes.status === 503 || geminiRes.status === 429 || geminiRes.status >= 500;
-      if (!vale_retry || tentativa === MAX_TENTATIVAS){
-        return jsonResponse({ error: 'A API da IA recusou a requisição (status ' + geminiRes.status + ').', detail: ultimoErroTexto.slice(0, 300) }, 502, origin);
+  modelos_loop:
+  for (const modelo of MODELOS){
+    for (let tentativa = 1; tentativa <= MAX_TENTATIVAS; tentativa++){
+      try {
+        geminiRes = await fetch(geminiUrl(modelo), {
+          method: 'POST',
+          headers: {
+            'x-goog-api-key': apiKey,
+            'content-type': 'application/json'
+          },
+          body: JSON.stringify(geminiPayload)
+        });
+      } catch (e) {
+        console.error('Falha no fetch pro Gemini (' + modelo + ', tentativa ' + tentativa + '):', e && e.stack ? e.stack : (e && e.message ? e.message : String(e)));
+        geminiRes = null;
       }
-    } else if (tentativa === MAX_TENTATIVAS){
-      return jsonResponse({ error: 'Não consegui falar com a API da IA agora. Tenta de novo em instantes.' }, 502, origin);
-    }
 
-    // espera crescendo entre tentativas: 800ms, depois 1600ms
-    await new Promise(function(resolve){ setTimeout(resolve, 800 * tentativa); });
+      if (geminiRes && geminiRes.ok){
+        break modelos_loop;
+      }
+
+      if (geminiRes){
+        ultimoErroTexto = await geminiRes.text().catch(function(){ return ''; });
+        ultimoErroStatus = geminiRes.status;
+        console.error('Gemini recusou (' + modelo + ', tentativa ' + tentativa + ', status ' + geminiRes.status + '):', ultimoErroTexto.slice(0, 300));
+        // só vale a pena tentar de novo (ou trocar de modelo) em erro de
+        // sobrecarga/instabilidade — erro de verdade (ex: pedido inválido)
+        // devolve na hora, sem ficar tentando à toa.
+        const vale_retry = geminiRes.status === 503 || geminiRes.status === 429 || geminiRes.status >= 500;
+        if (!vale_retry){
+          return jsonResponse({ error: 'A API da IA recusou a requisição (status ' + geminiRes.status + ').', detail: ultimoErroTexto.slice(0, 300) }, 502, origin);
+        }
+      }
+
+      const ultimaTentativaDesteModelo = tentativa === MAX_TENTATIVAS;
+      if (!ultimaTentativaDesteModelo){
+        // espera crescendo entre tentativas: 800ms, depois 1600ms
+        await new Promise(function(resolve){ setTimeout(resolve, 800 * tentativa); });
+      }
+    }
+    // esgotou as tentativas deste modelo — segue pro próximo da lista (se houver)
   }
 
   if (!geminiRes || !geminiRes.ok){
-    return jsonResponse({ error: 'A API da IA está instável agora. Tenta de novo em instantes.', detail: ultimoErroTexto.slice(0, 300) }, 502, origin);
+    const status = ultimoErroStatus || 502;
+    return jsonResponse({ error: 'A API da IA está com muita demanda agora (status ' + status + '). Tenta de novo em instantes.', detail: ultimoErroTexto.slice(0, 300) }, 502, origin);
   }
 
   const geminiJson = await geminiRes.json();
