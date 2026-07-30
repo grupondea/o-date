@@ -95,10 +95,26 @@ function buildPrompt(situacaoKey, contexto){
 
 function extractJsonArray(text){
   // tira eventuais crases de bloco markdown (```json ... ```) antes de parsear
-  const cleaned = text.trim().replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '');
-  const parsed = JSON.parse(cleaned);
-  if (!Array.isArray(parsed)) throw new Error('resposta não é um array');
-  return parsed.filter(function(item){ return typeof item === 'string' && item.trim().length > 0; });
+  const cleaned = text.trim().replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '').trim();
+
+  function tentaParsear(str){
+    const parsed = JSON.parse(str);
+    if (!Array.isArray(parsed)) throw new Error('resposta não é um array');
+    return parsed.filter(function(item){ return typeof item === 'string' && item.trim().length > 0; });
+  }
+
+  try {
+    return tentaParsear(cleaned);
+  } catch (e) {
+    // a IA às vezes escreve uma frase antes ou depois do array. Acha o
+    // primeiro '[' e o último ']' do texto e tenta parsear só esse trecho.
+    const inicio = cleaned.indexOf('[');
+    const fim = cleaned.lastIndexOf(']');
+    if (inicio !== -1 && fim !== -1 && fim > inicio){
+      return tentaParsear(cleaned.slice(inicio, fim + 1));
+    }
+    throw e;
+  }
 }
 
 async function handleGenerate(request, env, origin){
@@ -144,7 +160,8 @@ async function handleGenerate(request, env, origin){
     ],
     generationConfig: {
       maxOutputTokens: 1400,
-      temperature: 0.9
+      temperature: 0.9,
+      responseMimeType: 'application/json'
     }
   };
 
@@ -204,6 +221,7 @@ async function handleGenerate(request, env, origin){
   try {
     replies = extractJsonArray(textPart.text);
   } catch (e) {
+    console.error('Não consegui interpretar a resposta da IA. Texto bruto:', textPart.text.slice(0, 1000));
     return jsonResponse({ error: 'Não consegui interpretar a resposta da IA. Tenta de novo.' }, 502, origin);
   }
 
